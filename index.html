@@ -3,52 +3,50 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Vinylscraper</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font:16px -apple-system,system-ui,sans-serif;background:#111;color:#eee;padding:12px;max-width:640px;margin:auto}
-h1{font-size:20px;margin:4px 0 10px}button,.btn{background:#1db954;color:#000;border:0;border-radius:10px;padding:12px 14px;font-size:16px;font-weight:600}
-button.sec{background:#2a2a2a;color:#eee}button.big{width:100%;padding:18px;font-size:18px}
+*{box-sizing:border-box}body{margin:0;font:16px -apple-system,system-ui,sans-serif;background:#111;color:#eee;padding:10px;max-width:680px;margin:auto}
+button{background:#1db954;color:#000;border:0;border-radius:10px;padding:11px 13px;font-size:16px;font-weight:600}button.sec{background:#2a2a2a;color:#eee}
 input{width:100%;padding:10px;margin:4px 0 10px;border-radius:8px;border:1px solid #444;background:#1c1c1c;color:#eee;font-size:16px}
 details,.card{background:#1a1a1a;border-radius:12px;padding:12px;margin:10px 0}summary{font-weight:600}
-.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}.small{font-size:13px;color:#aaa}
-#status{min-height:22px;margin:8px 0;color:#9be}.err{color:#f88!important}
-.cand{display:flex;gap:10px;align-items:center;padding:6px;border-radius:8px;border:2px solid transparent}.cand.sel{border-color:#1db954}
-.cand img{width:56px;height:56px;border-radius:6px;object-fit:cover;background:#333}
-.price{font-size:20px;font-weight:700}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}.small{font-size:12px;color:#aaa}
+#cam{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:4/3}#vid{width:100%;height:100%;object-fit:cover}
+#ov{position:absolute;left:0;right:0;bottom:0;background:#000a;padding:6px 10px;font-size:14px}#ov.err{color:#f99}
+#camBtn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.price{font-size:22px;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.g{background:#222;border-radius:8px;padding:5px}.g img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;background:#333}
 .tr{padding:9px 6px;border-bottom:1px solid #2a2a2a;display:flex;justify-content:space-between}.tr.cur{background:#1db95433;border-radius:6px}
 a{color:#7cf}
-</style></head><body>
-<h1>Vinylscraper</h1>
+</style>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head><body>
+<div class="row" style="align-items:center"><b style="font-size:20px;flex:3">Vinylscraper</b><button class="sec" id="reset">Neue Platte</button></div>
+<div id="cam"><video id="vid" playsinline muted autoplay></video><button id="camBtn">📷 Kamera starten</button><div id="ov">Bereit.</div></div>
+<div id="out"></div>
+<div class="row"><input id="manual" placeholder="manuell: Artist - Album" style="flex:3"><button class="sec" id="mgo" style="flex:1;height:44px;margin-top:4px">Suche</button></div>
 <details id="set"><summary>Einstellungen</summary>
 <p class="small">Redirect-URI für Spotify: <b id="redir"></b></p>
 <label>Spotify Client ID<input id="cid" autocomplete="off"></label>
-<label>Gemini API Key<input id="gem" type="password" autocomplete="off"></label>
 <label>Discogs Token<input id="dis" type="password" autocomplete="off"></label>
-<label>Gemini Modell<input id="model"></label>
 <div class="row"><label>Intro (s)<input id="t1" type="number"></label><label>Sprung bei (s)<input id="jump" type="number"></label><label>Dauer (s)<input id="len" type="number"></label></div>
 <div class="row"><button id="save">Speichern</button><button class="sec" id="login">Bei Spotify anmelden</button></div>
 <p class="small" id="auth"></p></details>
-<button class="big" id="scan">📷 Rückseite fotografieren</button>
-<input id="file" type="file" accept="image/*" capture="environment" hidden>
-<div class="row" style="margin-top:8px"><input id="manual" placeholder="oder manuell: Artist - Album" style="flex:3"><button class="sec" id="mgo" style="flex:1">Suche</button></div>
-<div id="status"></div>
-<div id="out"></div>
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const cfg=Object.assign({cid:'',gem:'',dis:'',model:'gemini-flash-latest',t1:5,jump:120,len:10},JSON.parse(localStorage.getItem('lp')||'{}'));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const cfg=Object.assign({cid:'',dis:'',t1:5,jump:120,len:10},JSON.parse(localStorage.getItem('lp')||'{}'));
 const REDIR=location.origin+location.pathname;
-const status=(m,e)=>{const s=$('#status');s.textContent=m;s.className=e?'err':''};
-function fill(){for(const k of ['cid','gem','dis','model','t1','jump','len'])$('#'+k).value=cfg[k];$('#redir').textContent=REDIR;
+const ov=(m,e)=>{const o=$('#ov');o.textContent=m;o.className=e?'err':''};
+function fill(){for(const k of ['cid','dis','t1','jump','len'])$('#'+k).value=cfg[k];$('#redir').textContent=REDIR;
  $('#auth').textContent=localStorage.getItem('lpt')?'Spotify: angemeldet':'Spotify: nicht angemeldet'}
-$('#save').onclick=()=>{for(const k of ['cid','gem','dis','model'])cfg[k]=$('#'+k).value.trim();for(const k of ['t1','jump','len'])cfg[k]=Number($('#'+k).value)||cfg[k];
- localStorage.setItem('lp',JSON.stringify(cfg));status('Gespeichert.')};
+$('#save').onclick=()=>{for(const k of ['cid','dis'])cfg[k]=$('#'+k).value.trim();for(const k of ['t1','jump','len'])cfg[k]=Number($('#'+k).value)||cfg[k];
+ localStorage.setItem('lp',JSON.stringify(cfg));ov('Gespeichert.')};
 $('#login').onclick=()=>{$('#save').click();login()};
 const b64u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 async function login(){
- if(!cfg.cid){status('Bitte Spotify Client ID eintragen.',1);return}
+ if(!cfg.cid){ov('Bitte Spotify Client ID eintragen.',1);return}
  const v=b64u(crypto.getRandomValues(new Uint8Array(48)));localStorage.setItem('lpv',v);
  const ch=b64u(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v)));
- const p=new URLSearchParams({client_id:cfg.cid,response_type:'code',redirect_uri:REDIR,scope:'user-read-playback-state user-modify-playback-state',code_challenge_method:'S256',code_challenge:ch});
- location.href='https://accounts.spotify.com/authorize?'+p;
+ location.href='https://accounts.spotify.com/authorize?'+new URLSearchParams({client_id:cfg.cid,response_type:'code',redirect_uri:REDIR,scope:'user-read-playback-state user-modify-playback-state',code_challenge_method:'S256',code_challenge:ch});
 }
 async function tokenReq(body){
  const r=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(body)});
@@ -68,31 +66,19 @@ async function sp(path,opt={}){
  if(!r.ok)throw new Error('Spotify '+r.status+': '+((j.error&&j.error.message)||txt));
  return j;
 }
+let lastDg=0;
 async function dg(path,params={}){
+ const t=Math.max(Date.now(),lastDg+1100);lastDg=t;await sleep(t-Date.now());
  const u=new URL('https://api.discogs.com'+path);
  Object.entries(params).forEach(([k,v])=>{if(v)u.searchParams.set(k,v)});u.searchParams.set('token',cfg.dis);
- const r=await fetch(u);if(!r.ok)throw new Error('Discogs '+r.status);return r.json();
+ const r=await fetch(u);
+ if(r.status===429){lastDg=Date.now()+20000;throw new Error('Discogs 429 (Limit, kurz warten)')}
+ if(!r.ok)throw new Error('Discogs '+r.status);return r.json();
 }
-function toB64(file){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{const k=Math.min(1,1600/Math.max(img.width,img.height));
- const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
- res(c.toDataURL('image/jpeg',.85).split(',')[1]);URL.revokeObjectURL(img.src)};img.onerror=rej;img.src=URL.createObjectURL(file)})}
-async function readCover(b64){
- const prompt='Das Foto zeigt die Rückseite (oder Vorderseite) einer Schallplatte oder Maxi-Single. Lies Artist, Albumtitel, Label, Katalognummer (z.B. "2302 055"), Jahr und die Tracklist. Ignoriere Preisaufkleber und Händlernummern. Antworte NUR als JSON: {"artist":"","album":"","label":"","catno":"","year":"","tracks":[""],"confidence":0.0}. Unbekannte Felder leer lassen.';
- const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+cfg.model+':generateContent?key='+encodeURIComponent(cfg.gem),
-  {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{responseMimeType:'application/json',temperature:0}})});
- const j=await r.json();if(!r.ok)throw new Error('Gemini '+r.status+': '+((j.error&&j.error.message)||'')+(r.status==429?' (Limit erreicht, manuell suchen)':''));
- const t=j.candidates[0].content.parts.map(p=>p.text||'').join('').replace(/^```json|```$/g,'').trim();
- return JSON.parse(t);
-}
-async function findDiscogs(m){
- const tries=[];
- if(m.catno)tries.push({catno:m.catno,artist:m.artist});
- if(m.catno)tries.push({catno:m.catno});
- if(m.artist&&m.album)tries.push({artist:m.artist,release_title:m.album});
- tries.push({q:[m.artist,m.album].filter(Boolean).join(' ')});
- for(const t of tries){const j=await dg('/database/search',Object.assign({type:'release',per_page:8},t));if(j.results&&j.results.length)return j.results}
- return [];
-}
+const sc=new Map(),rc=new Map();
+async function search(p){const k=JSON.stringify(p);if(sc.has(k))return sc.get(k);
+ const j=await dg('/database/search',Object.assign({type:'release',format:'Vinyl',per_page:10},p));sc.set(k,j.results||[]);return j.results||[]}
+async function release(id){if(rc.has(id))return rc.get(id);const j=await dg('/releases/'+id);rc.set(id,j);return j}
 async function getPrice(id){
  const o={};
  try{const s=await dg('/marketplace/stats/'+id,{curr_abbr:'EUR'});o.low=s.lowest_price;o.n=s.num_for_sale}catch(e){o.err=e.message}
@@ -100,15 +86,52 @@ async function getPrice(id){
  return o;
 }
 const eur=p=>p&&p.value!=null?new Intl.NumberFormat('de-DE',{style:'currency',currency:p.currency||'EUR'}).format(p.value):'–';
+
+const STOP=new Set(['side','one','two','all','songs','the','and','for','records','record','produced','recorded','published','music','ltd','with','from','thanks','manufactured','distributed','made','printed','engineered','arranged','photograph','designed','artwork','special','strings','horns','stereo','digital','recording','written','copyright','reserved','rights','production','england','germany','london']);
+const tok=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().split(' ').filter(w=>w.length>=3);
+function lev(a,b,m){if(a===b)return 0;let p=Array.from({length:b.length+1},(_,i)=>i);
+ for(let i=1;i<=a.length;i++){const c=[i];let mn=i;for(let j=1;j<=b.length;j++){const v=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));c[j]=v;if(v<mn)mn=v}if(mn>m)return m+1;p=c}return p[b.length]}
+function has(T,w){if(T.has(w))return true;const m=w.length>=9?2:w.length>=5?1:0;if(!m)return false;
+ for(const t of T){if(Math.abs(t.length-w.length)<=m&&lev(t,w,m)<=m)return true}return false}
+function cover(T,words){const ws=words.filter(w=>w.length>=3);if(!ws.length)return 0;let h=0;for(const w of ws)if(has(T,w))h++;return h/ws.length}
+function catHit(al,catno){for(const c of String(catno).split(/[,\/]/)){const a=c.toLowerCase().replace(/[^a-z0-9]/g,'');if(a.length>=5&&al.includes(a))return 1}return 0}
+function buildQueries(text){
+ const words=[...new Set(tok(text).filter(w=>w.length>=4&&!STOP.has(w)&&!/^\d+$/.test(w)))];
+ const qs=[];const add=a=>{const q=a.join(' ');if(a.length&&!qs.some(x=>x.q===q))qs.push({q})};
+ add(words.slice(0,3));add(words.slice(0,5));add([...words].sort((a,b)=>b.length-a.length).slice(0,4));
+ [...text.toUpperCase().matchAll(/\b(\d{3,5}[ -]\d{3}|[A-Z]{1,5}[ -]?\d{3,6})\b/g)].map(m=>m[1]).slice(0,2).forEach(c=>qs.unshift({catno:c}));
+ return qs.slice(0,5);
+}
+async function rank(all,text,manual){
+ const T=new Set(tok(all));if(!manual&&T.size<8)return null;
+ const pool=new Map();
+ for(const p of (manual?[{q:text}]:buildQueries(text))){
+  try{for(const r of await search(p))if(!pool.has(r.id))pool.set(r.id,r)}catch(e){if(/429/.test(e.message))throw e}
+  if(pool.size>=30)break;
+ }
+ const al=all.toLowerCase().replace(/[^a-z0-9]/g,'');
+ const arr=[...pool.values()].map(r=>{const at=cover(T,tok(r.title));const cat=r.catno?catHit(al,r.catno):0;return {r,at,cat,tr:0,s:.35*at+.15*cat}});
+ arr.sort((a,b)=>b.s-a.s);
+ if(!manual)for(const c of arr.slice(0,8)){
+  try{const rel=await release(c.r.id);c.rel=rel;
+   const tl=(rel.tracklist||[]).filter(t=>!t.type_||t.type_==='track');
+   if(tl.length){let h=0;for(const t of tl)if(cover(T,tok(t.title))>=.6)h++;c.tr=h/tl.length}
+   c.s=.35*c.at+.5*c.tr+.15*c.cat}
+  catch(e){if(/429/.test(e.message))throw e}
+ }
+ arr.sort((a,b)=>b.s-a.s);return arr;
+}
+function distinct(arr){const seen=new Set(),d=[];for(const c of arr){const k=c.r.master_id||('r'+c.r.id);if(seen.has(k))continue;seen.add(k);c.k=k;d.push(c)}return d}
+
 const norm=s=>(s||'').toLowerCase().replace(/\(.*?\)|\[.*?\]/g,'').replace(/[^a-z0-9äöüß ]/g,' ').replace(/\s+/g,' ').trim();
 async function findSpotify(artist,album){
  let best=null,bs=0;
- for(const q of ['album:'+album+' artist:'+artist,album+' '+artist]){
+ for(const q of ['album:'+album+(artist?' artist:'+artist:''),album+' '+artist]){
   const j=await sp('/search?type=album&limit=10&q='+encodeURIComponent(q));
   for(const a of (j.albums&&j.albums.items)||[]){
    let s=0;const n=norm(a.name),w=norm(album);
    if(n===w)s+=3;else if(n.includes(w)||w.includes(n))s+=2;
-   if(a.artists.some(x=>norm(x.name)===norm(artist)||norm(artist).includes(norm(x.name))))s+=2;
+   if(!artist||a.artists.some(x=>norm(x.name)===norm(artist)||norm(artist).includes(norm(x.name))))s+=2;
    if(a.album_type==='album')s+=.5;
    if(s>bs){bs=s;best=a}
   }
@@ -116,15 +139,23 @@ async function findSpotify(artist,album){
  }
  if(!best||bs<3)return null;
  const full=await sp('/albums/'+best.id);
- return {id:best.id,name:full.name,artist:full.artists.map(x=>x.name).join(', '),img:(full.images[0]||{}).url,tracks:full.tracks.items.map(t=>({name:t.name,uri:t.uri,dur:t.duration_ms,n:t.track_number,d:t.disc_number}))};
+ return {name:full.name,tracks:full.tracks.items.map(t=>({name:t.name,uri:t.uri,dur:t.duration_ms}))};
+}
+async function spotTracks(artist,tl){
+ const out=[];
+ for(const t of tl.filter(t=>!t.type_||t.type_==='track').slice(0,8)){
+  try{const j=await sp('/search?type=track&limit=3&q='+encodeURIComponent('track:'+t.title+(artist?' artist:'+artist:'')));
+   const it=((j.tracks&&j.tracks.items)||[])[0];if(it)out.push({name:it.name,uri:it.uri,dur:it.duration_ms})}catch(e){}
+ }
+ return out;
 }
 let run=0,cur=-1,tracks=[],devId=null;
 const sleepUntil=(ms,id)=>new Promise(r=>{const end=Date.now()+ms;const iv=setInterval(()=>{if(run!==id||Date.now()>=end){clearInterval(iv);r()}},100)});
 async function getDevice(force){
  if(devId&&!force)return devId;
- const j=await sp('/me/player/devices');const d=j.devices||[];
+ const d=(await sp('/me/player/devices')).devices||[];
  const a=d.find(x=>x.is_active)||d.find(x=>x.type==='Smartphone')||d[0];
- if(!a)throw new Error('Kein Spotify-Gerät gefunden. Spotify-App öffnen, kurz einen Titel starten, dann nochmal.');
+ if(!a)throw new Error('Kein Spotify-Gerät gefunden. Spotify-App öffnen, kurz einen Titel starten.');
  devId=a.id;return devId;
 }
 async function playAt(uri,pos){
@@ -137,51 +168,113 @@ function mark(){document.querySelectorAll('.tr').forEach((e,i)=>e.classList.togg
 async function startFrom(i){
  run++;const id=run;
  for(cur=i;cur<tracks.length;cur++){
-  if(run!==id)return;mark();
-  const t=tracks[cur];
+  if(run!==id)return;mark();const t=tracks[cur];
   try{
    await playAt(t.uri,0);await sleepUntil(cfg.t1*1000,id);if(run!==id)return;
    const pos=t.dur>(cfg.jump+cfg.len)*1000+3000?cfg.jump*1000:Math.floor(t.dur*.5);
    await playAt(t.uri,pos);await sleepUntil(cfg.len*1000,id);
-  }catch(e){status(e.message,1);return}
+  }catch(e){ov(e.message,1);return}
  }
- if(run===id){try{await sp('/me/player/pause',{method:'PUT'})}catch(e){}status('Album durch.')}
+ if(run===id){try{await sp('/me/player/pause',{method:'PUT'})}catch(e){}}
 }
 async function stop(){run++;try{await sp('/me/player/pause',{method:'PUT'})}catch(e){}}
-function render(meta,cands,spot,price,sel){
- const q=encodeURIComponent((meta.artist||'')+' '+(meta.album||''));
- let h='<div class="card"><b>'+esc(meta.artist)+' – '+esc(meta.album)+'</b><div class="small">'+esc([meta.label,meta.catno,meta.year].filter(Boolean).join(' · '))+'</div></div>';
- if(price){h+='<div class="card"><div class="small">Discogs (günstigstes Angebot, kein Durchschnitt)</div><div class="price">ab '+eur(price.low)+'</div><div class="small">'+(price.n!=null?price.n+' im Angebot':'')+(price.vg?' · Preisvorschlag VG+: '+eur(price.vg):'')+(price.err&&!price.low?' · '+esc(price.err):'')+'</div></div>'}
- if(cands.length){h+='<div class="card"><div class="small">Discogs-Treffer (antippen = Preis dieser Pressung)</div>';
-  cands.slice(0,5).forEach((c,i)=>{h+='<div class="cand'+(i===sel?' sel':'')+'" data-i="'+i+'"><img src="'+esc(c.thumb)+'"><div>'+esc(c.title)+'<div class="small">'+esc([c.year,c.country,(c.label||[]).slice(0,1).join(),c.catno].filter(Boolean).join(' · '))+'</div></div></div>'});h+='</div>'}
- if(spot){h+='<div class="card"><div class="row"><button class="sec" id="prev">⏮</button><button class="sec" id="stop">⏸</button><button id="next">⏭ Nächster Titel</button></div><div style="margin-top:8px">';
-  spot.tracks.forEach((t,i)=>{h+='<div class="tr" data-i="'+i+'"><span>'+(i+1)+'. '+esc(t.name)+'</span><span class="small">'+Math.floor(t.dur/60000)+':'+String(Math.floor(t.dur/1000)%60).padStart(2,'0')+'</span></div>'});h+='</div></div>'}
- else h+='<div class="card">Nicht auf Spotify gefunden. <a target="_blank" href="https://listen.tidal.com/search?q='+q+'">Tidal</a> · <a target="_blank" href="https://www.youtube.com/results?search_query='+q+'+full+album">YouTube</a></div>';
+
+let locked=null,meta=null,price=null,spot=null,grid=null,lastDecided=null,tries=0,pend=null,scanStart=Date.now();
+function render(){
+ let h='';
+ if(grid){h+='<div class="card"><div class="small">Nicht eindeutig – bitte Cover antippen</div><div class="grid">'+grid.map((c,i)=>'<div class="g" data-g="'+i+'"><img src="'+esc(c.r.thumb)+'"><div class="small">'+esc(c.r.title)+'</div><div class="small">'+esc([c.r.year,c.r.country].filter(Boolean).join(' · '))+'</div></div>').join('')+'</div></div>'}
+ if(meta){
+  h+='<div class="card"><b>'+esc(meta.artist)+' – '+esc(meta.album)+'</b><div class="small">'+esc([meta.label,meta.catno,meta.year].filter(Boolean).join(' · '))+'</div>';
+  if(price)h+='<div class="price">ab '+eur(price.low)+'</div><div class="small">Discogs, günstigstes Angebot'+(price.n!=null?' · '+price.n+' im Angebot':'')+(price.vg?' · Vorschlag VG+: '+eur(price.vg):'')+(price.err&&!price.low?' · '+esc(price.err):'')+'</div>';
+  else h+='<div class="small">Preis wird geladen…</div>';
+  h+='</div>';
+  if(tracks.length){h+='<div class="card"><div class="row"><button class="sec" id="prev">⏮</button><button class="sec" id="stop">⏸</button><button id="next">⏭ Nächster Titel</button></div><div style="margin-top:8px">'+tracks.map((t,i)=>'<div class="tr" data-i="'+i+'"><span>'+(i+1)+'. '+esc(t.name)+'</span><span class="small">'+Math.floor(t.dur/60000)+':'+String(Math.floor(t.dur/1000)%60).padStart(2,'0')+'</span></div>').join('')+'</div></div>'}
+  else if(spot===false){const q=encodeURIComponent(meta.artist+' '+meta.album);h+='<div class="card">Nicht auf Spotify. <a target="_blank" href="https://listen.tidal.com/search?q='+q+'">Tidal</a> · <a target="_blank" href="https://www.youtube.com/results?search_query='+q+'+full+album">YouTube</a></div>'}
+ }
  $('#out').innerHTML=h;
- document.querySelectorAll('.cand').forEach(e=>e.onclick=async()=>{const i=+e.dataset.i;status('Preis wird geladen…');const p=await getPrice(cands[i].id);status('');render(meta,cands,spot,p,i)});
+ document.querySelectorAll('.g').forEach(e=>e.onclick=()=>lock(grid[+e.dataset.g]));
  document.querySelectorAll('.tr').forEach(e=>e.onclick=()=>startFrom(+e.dataset.i));
- if(spot){$('#next').onclick=()=>startFrom(Math.min(cur+1,tracks.length-1));$('#prev').onclick=()=>startFrom(Math.max(cur-1,0));$('#stop').onclick=stop;mark()}
+ if($('#next')){$('#next').onclick=()=>startFrom(Math.min(cur+1,tracks.length-1));$('#prev').onclick=()=>startFrom(Math.max(cur-1,0));$('#stop').onclick=stop;mark()}
 }
-async function process(meta){
- if(!meta.artist&&!meta.album&&!meta.catno){status('Nichts erkannt. Nochmal fotografieren oder manuell eingeben.',1);return}
- run++;status('Suche auf Discogs und Spotify…');
- const [d,s]=await Promise.allSettled([findDiscogs(meta),findSpotify(meta.artist||'',meta.album||'')]);
- const cands=d.status==='fulfilled'?d.value:[];const spot=s.status==='fulfilled'?s.value:null;
- let price=null;if(cands.length)price=await getPrice(cands[0].id);
- tracks=spot?spot.tracks:[];cur=-1;render(meta,cands,spot,price,0);
- const errs=[d,s].filter(x=>x.status==='rejected').map(x=>x.reason.message);
- status(errs.join(' | '),errs.length>0);
- if(spot&&tracks.length){if(!errs.length)status('Spiele '+spot.name);startFrom(0)}
+async function lock(c){
+ run++;locked=c;pend=null;grid=null;price=null;spot=null;tracks=[];cur=-1;
+ const rel=c.rel||await release(c.r.id);
+ const artist=(rel.artists||[]).map(a=>a.name.replace(/\s*\(\d+\)$/,'').replace(/\*$/,'')).join(', ').replace(/^Various$/i,'');
+ const album=rel.title;const lab=(rel.labels||[])[0]||{};
+ meta={artist,album,year:rel.year,label:lab.name,catno:lab.catno};render();
+ ov('Gefunden: '+(artist?artist+' – ':'')+album);
+ getPrice(c.r.id).then(p=>{if(locked===c){price=p;render()}});
+ try{
+  let s=await findSpotify(artist,album);
+  if(!s){const t=await spotTracks(artist,rel.tracklist||[]);if(t.length)s={name:album,tracks:t}}
+  if(locked!==c)return;
+  spot=s||false;tracks=s?s.tracks:[];render();if(tracks.length)startFrom(0);
+ }catch(e){ov(e.message,1)}
 }
-$('#scan').onclick=()=>{if(!cfg.gem){status('Gemini Key fehlt (Einstellungen). Manuell suchen geht trotzdem.',1);$('#set').open=true;return}$('#file').click()};
-$('#file').onchange=async e=>{const f=e.target.files[0];if(!f)return;e.target.value='';
- try{status('Lese Foto…');const meta=await readCover(await toB64(f));status('Erkannt: '+(meta.artist||'?')+' – '+(meta.album||'?'));await process(meta)}catch(err){status(err.message,1)}};
-$('#mgo').onclick=async()=>{const v=$('#manual').value.trim();if(!v)return;const p=v.split(/\s+[-–]\s+/);
- try{await process({artist:p[0],album:p.slice(1).join(' - ')||p[0]})}catch(err){status(err.message,1)}};
+function showGrid(d){grid=d.slice(0,6);render()}
+async function identify(all,text,manual){
+ ov('Suche in Discogs…');
+ const arr=await rank(all,text,manual);if(!arr)return;
+ const d=distinct(arr);lastDecided=d;
+ if(!d.length){ov('Kein Treffer, weiter…');return}
+ if(manual){showGrid(d);return}
+ const b=d[0],m=d.length>1?b.s-d[1].s:1;
+ if(!locked){if(b.s>=.5&&m>=.08)await lock(b);else if(Date.now()-scanStart>12000||++tries>=3){showGrid(d);ov('Nicht eindeutig – Cover antippen.')}else ov('Unsicher, scanne weiter…')}
+ else if(b.k!==locked.k&&b.s>=.65&&m>=.12){if(pend===b.k)await lock(b);else pend=b.k}
+}
+function grab(){const v=$('#vid'),k=Math.min(1,1600/Math.max(v.videoWidth,v.videoHeight)),c=document.createElement('canvas');
+ c.width=Math.round(v.videoWidth*k);c.height=Math.round(v.videoHeight*k);c.getContext('2d').drawImage(v,0,0,c.width,c.height);return c}
+function adaptive(c){const w=c.width,h=c.height,x=c.getContext('2d'),id=x.getImageData(0,0,w,h),d=id.data,g=new Float32Array(w*h);
+ for(let i=0;i<w*h;i++)g[i]=d[4*i]*.299+d[4*i+1]*.587+d[4*i+2]*.114;
+ const W=w+1,I=new Float64Array(W*(h+1));
+ for(let y=0;y<h;y++){let s=0;for(let u=0;u<w;u++){s+=g[y*w+u];I[(y+1)*W+u+1]=I[y*W+u+1]+s}}
+ const r=Math.max(10,Math.round(Math.min(w,h)/25));
+ for(let y=0;y<h;y++){const y0=Math.max(0,y-r),y1=Math.min(h,y+r+1);for(let u=0;u<w;u++){const x0=Math.max(0,u-r),x1=Math.min(w,u+r+1);
+  const m=(I[y1*W+x1]-I[y0*W+x1]-I[y1*W+x0]+I[y0*W+x0])/((y1-y0)*(x1-x0));const v=g[y*w+u]<m*.9?0:255;const i=4*(y*w+u);d[i]=d[i+1]=d[i+2]=v}}
+ x.putImageData(id,0,0)}
+function gray(c){const w=c.width,h=c.height,x=c.getContext('2d'),id=x.getImageData(0,0,w,h),d=id.data,hist=new Uint32Array(256),n=w*h;
+ for(let i=0;i<n;i++){const v=d[4*i]*.299+d[4*i+1]*.587+d[4*i+2]*.114|0;d[4*i]=v;hist[v]++}
+ let a=0,lo=0,hi=255;while(lo<255&&(a+=hist[lo])<n*.01)lo++;a=0;while(hi>0&&(a+=hist[hi])<n*.01)hi--;
+ const s=255/Math.max(1,hi-lo);for(let i=0;i<n;i++){const v=Math.max(0,Math.min(255,(d[4*i]-lo)*s));d[4*i]=d[4*i+1]=d[4*i+2]=v}x.putImageData(id,0,0)}
+const jac=(a,b)=>{let i=0;for(const t of a)if(b.has(t))i++;return i/Math.max(1,a.size+b.size-i)};
+let worker=null,active=false,busy=false,buf=[],lastTok=null,alt=0;
+async function cycle(){
+ const c=grab();if(!c.width)return;(alt++%2===0)?adaptive(c):gray(c);
+ const {data}=await worker.recognize(c);const text=data.text||'';
+ buf.push(text);if(buf.length>3)buf.shift();
+ const all=buf.join('\n'),T=new Set(tok(all));
+ if(T.size<8){ov('Rückseite ruhig und nah vor die Kamera halten…');return}
+ if(!locked&&lastDecided&&Date.now()-scanStart>12000&&!grid){showGrid(lastDecided);ov('Nicht eindeutig – Cover antippen.')}
+ if(lastTok&&jac(T,lastTok)>.85)return;
+ lastTok=T;await identify(all,text,false);
+}
+async function loop(){
+ while(active){
+  if(!busy&&!document.hidden){busy=true;try{await cycle()}catch(e){ov(e.message,1);await sleep(3000)}finally{busy=false}}
+  await sleep(locked?2500:400);
+ }
+}
+async function startCam(){
+ try{
+  if(!cfg.cid||!cfg.dis||!localStorage.getItem('lpt')){$('#set').open=true;ov('Erst Einstellungen ausfüllen und bei Spotify anmelden.',1);return}
+  $('#camBtn').style.display='none';
+  const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
+  const v=$('#vid');v.srcObject=s;await v.play();
+  ov('Lade Texterkennung (einmalig, ca. 10 MB)…');
+  worker=await Tesseract.createWorker('eng');
+  try{await worker.setParameters({tessedit_pageseg_mode:'11'})}catch(e){}
+  ov('Halte die Rückseite einer Platte vor die Kamera.');
+  active=true;scanStart=Date.now();loop();
+ }catch(e){$('#camBtn').style.display='';ov('Kamera/OCR: '+e.message,1)}
+}
+$('#camBtn').onclick=startCam;
+$('#reset').onclick=()=>{run++;locked=null;meta=null;price=null;spot=null;grid=null;tracks=[];lastDecided=null;lastTok=null;buf=[];tries=0;pend=null;scanStart=Date.now();render();stop();ov('Bereit für die nächste Platte.')};
+$('#mgo').onclick=async()=>{const v=$('#manual').value.trim();if(!v)return;
+ try{await identify(v,v,true)}catch(e){ov(e.message,1)}};
 (async()=>{fill();
  const q=new URLSearchParams(location.search);
- if(q.get('code')){try{await tokenReq({client_id:cfg.cid,grant_type:'authorization_code',code:q.get('code'),redirect_uri:REDIR,code_verifier:localStorage.getItem('lpv')});history.replaceState({},'',REDIR);fill();status('Spotify verbunden.')}catch(e){status(e.message,1)}}
- else if(q.get('error'))status('Spotify: '+q.get('error'),1);
- if(!cfg.cid||!cfg.dis||!localStorage.getItem('lpt'))$('#set').open=true;
+ if(q.get('code')){try{await tokenReq({client_id:cfg.cid,grant_type:'authorization_code',code:q.get('code'),redirect_uri:REDIR,code_verifier:localStorage.getItem('lpv')});history.replaceState({},'',REDIR);fill();ov('Spotify verbunden.')}catch(e){ov(e.message,1)}}
+ else if(q.get('error'))ov('Spotify: '+q.get('error'),1);
+ if(cfg.cid&&cfg.dis&&localStorage.getItem('lpt'))startCam();else $('#set').open=true;
 })();
 </script></body></html>
