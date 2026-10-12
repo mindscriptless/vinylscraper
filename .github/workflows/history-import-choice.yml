@@ -1,0 +1,42 @@
+name: Integrate history import choice
+on:
+  push:
+    branches: [main]
+    paths: ['history-import-choice.js', '.github/workflows/history-import-choice.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate validated import choices
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('history-tools.js')
+          s=p.read_text()
+          old="const incoming=validateBackup(JSON.parse(await f.text())),merged=mergeRecords(historyRecords,incoming);if(!window.confirm('Import '+incoming.length+' albums? Existing ratings and sample marks will be kept.'))return;localStorage.setItem('lph',JSON.stringify(merged));historyRecords=merged;"
+          new="const incoming=validateBackup(JSON.parse(await f.text()));if(typeof window.vinylChooseHistoryImport!=='function')throw new Error('Import dialog unavailable. Reload the app.');const choice=await window.vinylChooseHistoryImport(incoming.length,historyRecords.length);if(choice!=='merge'&&choice!=='replace')return;const next=choice==='replace'?mergeRecords([],incoming):mergeRecords(historyRecords,incoming);localStorage.setItem('lph',JSON.stringify(next));historyRecords=next;"
+          if old in s:
+              assert s.count(old)==1
+              s=s.replace(old,new,1)
+          else:
+              assert new in s
+          p.write_text(s)
+          p=Path('index.html')
+          s=p.read_text()
+          assert 'history-tools.js' in s and '</body>' in s
+          s=re.sub(r'history-tools\.js(?:\?[^"\n]*)?', 'history-tools.js?v=20261012-26',s)
+          s=re.sub(r'<script src="history-import-choice\.js[^"\n]*"></script>\s*','',s)
+          s=s.replace('</body>','<script src="history-import-choice.js?v=20261012-26"></script>\n</body>')
+          p.write_text(s)
+          PY
+          node --check history-tools.js
+          node --check history-import-choice.js
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add history-tools.js index.html
+          if ! git diff --cached --quiet; then git commit -m "Integrate merge or replace history import dialog"; git push; fi
