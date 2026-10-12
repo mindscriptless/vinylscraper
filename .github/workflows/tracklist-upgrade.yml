@@ -1,0 +1,42 @@
+name: Integrate tracklist discovery, cover pagination and photo hints
+on:
+  push:
+    branches: [main]
+    paths: ['tracklist-upgrade.js', 'photo-hints.js', '.github/workflows/tracklist-upgrade.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate and validate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('tracklist-upgrade.js')
+          s=p.read_text()
+          old='c.s=used.size/s.hints.length;'
+          new='c.cat=Number(c.r._catalog)||0;c.s=used.size/s.hints.length+.25*c.cat;'
+          if old in s:
+              assert s.count(old)==1
+              s=s.replace(old,new,1)
+          else:
+              assert new in s
+          s=s.replace('return verified.sort((a,b)=>b.reverseMatches-a.reverseMatches||b.votes-a.votes)', 'return verified.sort((a,b)=>b.s-a.s||b.votes-a.votes)')
+          p.write_text(s)
+          p=Path('index.html')
+          s=p.read_text()
+          assert 'manual-tracklist.js' in s and '</body>' in s
+          s=re.sub(r'<script src="(?:tracklist-upgrade|photo-hints)\.js[^"\n]*"></script>\s*','',s)
+          s=s.replace('</body>','<script src="tracklist-upgrade.js?v=20261012-25"></script>\n<script src="photo-hints.js?v=20261012-25"></script>\n</body>')
+          p.write_text(s)
+          PY
+          node --check tracklist-upgrade.js
+          node --check photo-hints.js
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html tracklist-upgrade.js
+          if ! git diff --cached --quiet; then git commit -m "Integrate OCR modes and catalogue-aware tracklist ranking"; git push; fi
