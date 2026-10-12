@@ -1,0 +1,30 @@
+name: Integrate camera and mobile layout
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/camera-mobile-layout.yml', 'camera-mobile-layout.js']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate camera controls and compact ratings
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text()
+          assert 'separate-scan.js' in s and 'history-columns.js' in s
+          s=re.sub(r'<script src="camera-mobile-layout\.js[^"\n]*"></script>\s*','',s)
+          s=s.replace('</body>','<script src="camera-mobile-layout.js?v=20261012-22"></script>\n</body>')
+          p.write_text(s)
+          PY
+          node --check camera-mobile-layout.js
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          if ! git diff --cached --quiet; then git commit -m "Integrate camera toggle, last-shot overlay and compact mobile History"; git push; fi
