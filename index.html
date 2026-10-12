@@ -3,47 +3,144 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Vinylscraper</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font:16px -apple-system,system-ui,sans-serif;background:#111;color:#eee;padding:10px;max-width:680px;margin:auto}
-button{background:#1db954;color:#000;border:0;border-radius:10px;padding:11px 13px;font-size:16px;font-weight:600}button.sec{background:#2a2a2a;color:#eee}
-input{width:100%;padding:10px;margin:4px 0 10px;border-radius:8px;border:1px solid #444;background:#1c1c1c;color:#eee;font-size:16px}
-details,.card{background:#1a1a1a;border-radius:12px;padding:12px;margin:10px 0}summary{font-weight:600}
-.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}.small{font-size:12px;color:#aaa}
-#cam{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:4/3}#vid{width:100%;height:100%;object-fit:cover}
-#ov{position:absolute;left:0;right:0;bottom:0;background:#000a;padding:6px 10px;font-size:14px}#ov.err{color:#f99}
+:root{--bg:#203A42;--frame:#A7CA8C;--menu:#FCCACD;--spare:#CAC5D3;--card:#2b4852;--ink:#203A42;--txt:#F1F5F0}
+*{box-sizing:border-box}body{margin:0;font:16px -apple-system,system-ui,sans-serif;background:var(--bg);color:var(--txt);padding:10px;max-width:680px;margin:auto}
+body.desktop{max-width:1100px}
+button{background:var(--frame);color:var(--ink);border:0;border-radius:10px;padding:11px 13px;font-size:16px;font-weight:600}button.sec{background:var(--spare);color:var(--ink)}
+input,select{width:100%;padding:10px;margin:4px 0 10px;border-radius:8px;border:1px solid #5d7a83;background:#183037;color:var(--txt);font-size:16px}
+.card{background:var(--card);border-radius:12px;padding:12px;margin:10px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}.small{font-size:12px;color:var(--spare)}
+.top{display:flex;align-items:center;gap:8px;margin-bottom:6px}.top b{font-size:20px;flex:1}
+button.ico{background:transparent;padding:2px;border-radius:50%;line-height:0}
+#backdrop{position:fixed;inset:0;background:#0009;z-index:19}#backdrop[hidden]{display:none}
+#panel{position:fixed;top:0;right:0;bottom:0;width:min(92vw,380px);z-index:20;background:var(--menu);color:var(--ink);overflow-y:auto;padding:14px 18px 40px;border-radius:24px 0 0 24px;box-shadow:-8px 0 30px #000b}
+#panel[hidden]{display:none}
+#panel .ph{display:flex;justify-content:space-between;align-items:center}
+#xBtn{background:transparent;color:var(--ink);font-size:30px;line-height:1;padding:4px 8px}
+.mh{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#6b5a60;margin:20px 0 6px;font-weight:700}
+.mrow{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:16px}.mrow>span:first-child{flex:1}
+.mrow select{width:auto;margin:0;padding:6px;font-size:14px;max-width:130px;background:#fff;color:var(--ink);border:0}
+.mrow.full select{width:100%;max-width:none}
+.mrow.dis{opacity:.5}.mrow i{font-size:10px;font-style:normal;border:1px solid #6b5a60;border-radius:6px;padding:1px 5px;margin-left:6px}
+.mrow small,#panel .small{font-size:11px;color:#6b5a60}
+.modes{justify-content:center}.modes span{flex:0!important}.dim{color:#9a8a90}
+.nin{width:110px;margin:0;text-align:center;font-size:20px;background:#fff;color:var(--ink);border:0;padding:8px}
+.nin:disabled{opacity:.45}
+#panel input[type=checkbox].ck{width:26px;height:26px;margin:0;accent-color:var(--ink)}
+#panel .cred{width:100%;background:#fff;color:var(--ink);border:0;margin:2px 0 8px}
+#panel button.src{flex:none;background:var(--ink);color:var(--menu);padding:8px 14px;font-size:14px}
+#panel button.src:disabled{opacity:.45}
+.sw{position:relative;width:46px;height:26px;flex:none;display:inline-block}.sw input{opacity:0;width:0;height:0;position:absolute;margin:0}
+.sw span{position:absolute;inset:0;background:var(--spare);border-radius:13px;transition:.15s}
+.sw span::before{content:"";position:absolute;top:3px;left:23px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.15s}
+.sw input:checked+span{background:var(--ink)}.sw input:checked+span::before{left:3px;background:var(--frame)}
+.sw.mode span{background:var(--spare)}.sw.mode input:checked+span{background:var(--spare)}
+.sw.mode span::before{left:3px;background:var(--ink)}.sw.mode input:checked+span::before{left:23px}
+.sw input:disabled+span{opacity:.5}
+#main{display:block}body.desktop #main{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+#cam{position:relative;background:#000;border:5px solid var(--frame);border-radius:16px;overflow:hidden;aspect-ratio:4/3}#vid{width:100%;height:100%;object-fit:cover}
+#ov{position:absolute;left:0;right:0;bottom:0;background:#203A42dd;padding:6px 10px;font-size:14px;color:var(--txt)}#ov.err{color:#ffb4b4}
 #camBtn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-.price{font-size:22px;font-weight:700}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.g{background:#222;border-radius:8px;padding:5px}.g img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;background:#333}
-.tr{padding:9px 6px;border-bottom:1px solid #2a2a2a;display:flex;justify-content:space-between}.tr.cur{background:#1db95433;border-radius:6px}
-a{color:#7cf}
+#scanBtn{position:absolute;right:10px;bottom:46px}#scanBtn[hidden]{display:none}
+.price{font-size:22px;font-weight:700;color:var(--frame)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.g{background:#183037;border-radius:8px;padding:5px;cursor:pointer}.g img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;background:#333}
+.tr{padding:9px 6px;border-bottom:1px solid #3d5a64;display:flex;justify-content:space-between;cursor:pointer}.tr.cur{background:#A7CA8C33;border-radius:6px}
+a{color:var(--frame)}
+a.srow{display:flex;gap:12px;align-items:center;text-decoration:none;color:var(--txt);background:#183037;border-radius:12px;padding:10px;margin-top:8px}
+.badge{width:44px;height:44px;border-radius:10px;background:var(--spare);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head><body>
-<div class="row" style="align-items:center"><b style="font-size:20px;flex:3">Vinylscraper</b><button class="sec" id="reset">Neue Platte</button></div>
-<div id="cam"><video id="vid" playsinline muted autoplay></video><button id="camBtn">📷 Kamera starten</button><div id="ov">Bereit.</div></div>
-<div id="out"></div>
-<div class="row"><input id="manual" placeholder="manuell: Artist - Album" style="flex:3"><button class="sec" id="mgo" style="flex:1;height:44px;margin-top:4px">Suche</button></div>
-<details id="set"><summary>Einstellungen</summary>
-<p class="small">Redirect-URI für Spotify: <b id="redir"></b></p>
-<label>Spotify Client ID<input id="cid" autocomplete="off"></label>
-<label>Discogs Token<input id="dis" type="password" autocomplete="off"></label>
-<div class="row"><label>Intro (s)<input id="t1" type="number"></label><label>Sprung bei (s)<input id="jump" type="number"></label><label>Dauer (s)<input id="len" type="number"></label></div>
-<div class="row"><button id="save">Speichern</button><button class="sec" id="login">Bei Spotify anmelden</button></div>
-<p class="small" id="auth"></p></details>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<path id="record-outline" d="M 228 10 L 272 10 Q 284 10 286 24 L 291 76 Q 308 81 327 91 L 367 58 Q 378 49 388 59 L 441 112 Q 451 122 442 133 L 409 173 Q 419 192 424 209 L 476 214 Q 490 216 490 228 L 490 272 Q 490 284 476 286 L 424 291 Q 419 308 409 327 L 442 367 Q 451 378 441 388 L 388 441 Q 378 451 367 442 L 327 409 Q 308 419 291 424 L 286 476 Q 284 490 272 490 L 228 490 Q 216 490 214 476 L 209 424 Q 192 419 173 409 L 133 442 Q 122 451 112 441 L 59 388 Q 49 378 58 367 L 91 327 Q 81 308 76 291 L 24 286 Q 10 284 10 272 L 10 228 Q 10 216 24 214 L 76 209 Q 81 192 91 173 L 58 133 Q 49 122 59 112 L 112 59 Q 122 49 133 58 L 173 91 Q 192 81 209 76 L 214 24 Q 216 10 228 10 Z"/>
+<clipPath id="record-clip"><use href="#record-outline"/></clipPath>
+<g id="vg"><use href="#record-outline" fill="#161617"/>
+<g clip-path="url(#record-clip)" fill="none" stroke="#3a3a3c" stroke-width="3"><circle cx="250" cy="250" r="112"/><circle cx="250" cy="250" r="128"/><circle cx="250" cy="250" r="144"/><circle cx="250" cy="250" r="160"/><circle cx="250" cy="250" r="176"/><circle cx="250" cy="250" r="192"/><circle cx="250" cy="250" r="208"/><circle cx="250" cy="250" r="224"/><circle cx="250" cy="250" r="240"/><circle cx="250" cy="250" r="256"/></g>
+<circle cx="250" cy="250" r="94" fill="#e8302a"/><circle cx="250" cy="250" r="13" fill="#000"/></g>
+</defs></svg>
+<div class="top"><b>Vinylscraper</b><button class="sec" id="reset">Neue Platte</button><button class="ico" id="gearBtn" aria-label="Menü"><svg viewBox="0 0 500 500" width="34" height="34"><use href="#vg"/></svg></button></div>
+<div id="backdrop" hidden></div>
+<div id="panel" hidden>
+ <div class="ph"><svg viewBox="0 0 500 500" width="34" height="34"><use href="#vg"/></svg><button id="xBtn" aria-label="Schließen">✕</button></div>
+ <div class="mh">Mode</div>
+ <div class="mrow modes"><span id="lMobile">mobile</span><label class="sw mode"><input type="checkbox" id="modeSw"><span></span></label><span id="lDesktop">desktop</span></div>
+ <div class="mrow full" id="camRow" hidden><select id="camSel"></select></div>
+ <div class="mh">Capture</div>
+ <div class="mrow modes"><span id="lMan">manual</span><label class="sw mode"><input type="checkbox" id="capSw"><span></span></label><span id="lAuto">auto</span></div>
+ <div class="mh">Cue sequence (s)</div>
+ <div class="mrow"><span>Start from</span><input class="nin cue" type="number" id="s0" min="0"></div>
+ <div class="mrow"><span>Play for</span><input class="nin cue" type="number" id="t1" min="1"></div>
+ <div class="mrow"><span>Jump to</span><input class="nin cue" type="number" id="jump" min="0"></div>
+ <div class="mrow"><span>Play for</span><input class="nin cue" type="number" id="len" min="1"></div>
+ <div class="mrow"><span>Skip to next title</span><input class="ck cue" type="checkbox" id="skip"></div>
+ <div class="mh">Functions</div>
+ <div class="mrow"><span>Auto track preview</span><label class="sw"><input type="checkbox" id="fPrev"><span></span></label></div>
+ <div class="mrow dis"><span>Add to library <i>bald</i></span><label class="sw"><input type="checkbox" disabled><span></span></label></div>
+ <div class="mrow"><span>Show price range</span><select id="curSel"></select><label class="sw"><input type="checkbox" id="fPrice"><span></span></label></div>
+ <div class="mrow dis"><span>Save to history <i>bald</i></span><label class="sw"><input type="checkbox" disabled><span></span></label></div>
+ <div class="mrow"><span>Play free</span><label class="sw"><input type="checkbox" id="fFree"><span></span></label></div>
+ <div class="mrow"><small>*deactivates cue sequence</small></div>
+ <div class="mh">Sources</div>
+ <div class="mrow"><span>Spotify <small id="spSt"></small></span><button class="src" id="spBtn">Connect</button></div>
+ <div class="mh" style="margin-top:12px">Add sources</div>
+ <div class="mrow"><span>Tidal</span><label class="sw"><input type="checkbox" id="sTidal"><span></span></label></div>
+ <div class="mrow"><span>YouTube</span><label class="sw"><input type="checkbox" id="sYt"><span></span></label></div>
+ <div class="mrow"><span>Apple Music</span><label class="sw"><input type="checkbox" id="sApple"><span></span></label></div>
+ <div class="mrow"><small>Fallback, wenn Spotify nichts findet. Öffnet die Suche in der jeweiligen App, keine Anmeldung nötig.</small></div>
+ <div class="mh">Setup I/O</div>
+ <label class="small">Spotify Client ID</label><input class="cred" id="cid" autocomplete="off">
+ <label class="small">Discogs Token</label><input class="cred" id="dis" type="password" autocomplete="off">
+ <p class="small">Redirect-URI für Spotify:<br><b id="redir"></b></p>
+ <button class="src" id="save" style="width:100%">Speichern</button>
+</div>
+<div id="main">
+ <div><div id="cam"><video id="vid" playsinline muted autoplay></video><button id="camBtn">📷 Kamera starten</button><button id="scanBtn" hidden>📸 Scannen</button><div id="ov">Bereit.</div></div>
+ <div class="row" style="margin-top:8px"><input id="manual" placeholder="manuell: Artist - Album" style="flex:3"><button class="sec" id="mgo" style="flex:1;height:44px;margin-top:4px">Suche</button></div></div>
+ <div id="out"></div>
+</div>
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const cfg=Object.assign({cid:'',dis:'',t1:5,jump:120,len:10},JSON.parse(localStorage.getItem('lp')||'{}'));
+const cfg=Object.assign({cid:'',dis:'',s0:0,t1:5,jump:120,len:10,skip:true},JSON.parse(localStorage.getItem('lp')||'{}'));
+const ui=Object.assign({mode:'mobile',cam:'',cap:'auto',prev:true,price:true,free:false,cur:'EUR',tidal:true,yt:true,apple:true},JSON.parse(localStorage.getItem('lpui')||'{}'));
+const saveUI=()=>localStorage.setItem('lpui',JSON.stringify(ui));
+const saveCfg=()=>localStorage.setItem('lp',JSON.stringify(cfg));
+const CURS=['EUR','USD','GBP','CHF','CAD','AUD','JPY','SEK','NZD','MXN','BRL','ZAR'];
 const REDIR=location.origin+location.pathname;
 const ov=(m,e)=>{const o=$('#ov');o.textContent=m;o.className=e?'err':''};
-function fill(){for(const k of ['cid','dis','t1','jump','len'])$('#'+k).value=cfg[k];$('#redir').textContent=REDIR;
- $('#auth').textContent=localStorage.getItem('lpt')?'Spotify: angemeldet':'Spotify: nicht angemeldet'}
-$('#save').onclick=()=>{for(const k of ['cid','dis'])cfg[k]=$('#'+k).value.trim();for(const k of ['t1','jump','len'])cfg[k]=Number($('#'+k).value)||cfg[k];
- localStorage.setItem('lp',JSON.stringify(cfg));ov('Gespeichert.')};
-$('#login').onclick=()=>{$('#save').click();login()};
+const connected=()=>!!localStorage.getItem('lpt');
+function fill(){for(const k of ['cid','dis'])$('#'+k).value=cfg[k];for(const k of ['s0','t1','jump','len'])$('#'+k).value=cfg[k];
+ $('#skip').checked=!!cfg.skip;$('#redir').textContent=REDIR;
+ $('#spSt').textContent=connected()?'· verbunden':'· nicht verbunden';$('#spBtn').textContent=connected()?'Neu verbinden':'Connect'}
+$('#save').onclick=()=>{for(const k of ['cid','dis'])cfg[k]=$('#'+k).value.trim();saveCfg();ov('Gespeichert.')};
+for(const k of ['s0','t1','jump','len'])$('#'+k).onchange=e=>{const v=Number(e.target.value);if(!isNaN(v)&&v>=0){cfg[k]=v;saveCfg()}};
+$('#skip').onchange=e=>{cfg.skip=e.target.checked;saveCfg()};
+$('#spBtn').onclick=()=>{$('#save').click();login()};
+$('#curSel').innerHTML=CURS.map(c=>'<option>'+c+'</option>').join('');
+function applyUI(){const d=ui.mode==='desktop',a=ui.cap==='auto';document.body.classList.toggle('desktop',d);
+ $('#modeSw').checked=d;$('#lMobile').classList.toggle('dim',d);$('#lDesktop').classList.toggle('dim',!d);$('#camRow').hidden=!d;
+ $('#capSw').checked=a;$('#lMan').classList.toggle('dim',a);$('#lAuto').classList.toggle('dim',!a);$('#scanBtn').hidden=a||!active;
+ $('#fPrev').checked=ui.prev;$('#fPrice').checked=ui.price;$('#fFree').checked=ui.free;$('#curSel').value=ui.cur;
+ $('#sTidal').checked=ui.tidal;$('#sYt').checked=ui.yt;$('#sApple').checked=ui.apple;
+ document.querySelectorAll('.cue').forEach(e=>e.disabled=ui.free)}
+const openP=()=>{$('#panel').hidden=false;$('#backdrop').hidden=false},closeP=()=>{$('#panel').hidden=true;$('#backdrop').hidden=true};
+$('#gearBtn').onclick=openP;$('#xBtn').onclick=closeP;$('#backdrop').onclick=closeP;
+const camErr=x=>ov('Kamera: '+x.message,1);
+$('#modeSw').onchange=e=>{ui.mode=e.target.checked?'desktop':'mobile';saveUI();applyUI();if(active)openCam().catch(camErr)};
+$('#camSel').onchange=e=>{ui.cam=e.target.value;saveUI();if(active)openCam().catch(camErr)};
+$('#capSw').onchange=e=>{ui.cap=e.target.checked?'auto':'manual';saveUI();applyUI()};
+$('#fPrev').onchange=e=>{ui.prev=e.target.checked;saveUI();
+ if(!ui.prev){run++;sp('/me/player/pause',{method:'PUT'}).catch(()=>{});tracks=[];spot=null;render()}
+ else if(locked)preview(locked)};
+$('#fPrice').onchange=e=>{ui.price=e.target.checked;saveUI();if(ui.price&&locked&&!price)loadPrice(locked);render()};
+$('#curSel').onchange=e=>{ui.cur=e.target.value;saveUI();price=null;if(locked&&ui.price)loadPrice(locked);render()};
+$('#fFree').onchange=e=>{ui.free=e.target.checked;saveUI();applyUI();run++};
+for(const [id,k] of [['sTidal','tidal'],['sYt','yt'],['sApple','apple']])$('#'+id).onchange=e=>{ui[k]=e.target.checked;saveUI();render()};
+
 const b64u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 async function login(){
- if(!cfg.cid){ov('Bitte Spotify Client ID eintragen.',1);return}
+ if(!cfg.cid){ov('Bitte Spotify Client ID eintragen (Setup I/O).',1);return}
  const v=b64u(crypto.getRandomValues(new Uint8Array(48)));localStorage.setItem('lpv',v);
  const ch=b64u(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v)));
  location.href='https://accounts.spotify.com/authorize?'+new URLSearchParams({client_id:cfg.cid,response_type:'code',redirect_uri:REDIR,scope:'user-read-playback-state user-modify-playback-state',code_challenge_method:'S256',code_challenge:ch});
@@ -56,7 +153,7 @@ async function tokenReq(body){
  localStorage.setItem('lpt',JSON.stringify(n));return n;
 }
 async function token(){
- let t=JSON.parse(localStorage.getItem('lpt')||'null');if(!t)throw new Error('Nicht bei Spotify angemeldet (Einstellungen).');
+ let t=JSON.parse(localStorage.getItem('lpt')||'null');if(!t)throw new Error('Nicht bei Spotify verbunden (Sources).');
  if(Date.now()>t.exp)t=await tokenReq({client_id:cfg.cid,grant_type:'refresh_token',refresh_token:t.refresh});
  return t.access;
 }
@@ -75,17 +172,27 @@ async function dg(path,params={}){
  if(r.status===429){lastDg=Date.now()+20000;throw new Error('Discogs 429 (Limit, kurz warten)')}
  if(!r.ok)throw new Error('Discogs '+r.status);return r.json();
 }
-const sc=new Map(),rc=new Map();
+const sc=new Map(),rc=new Map(),pc=new Map(),fx=new Map();
 async function search(p){const k=JSON.stringify(p);if(sc.has(k))return sc.get(k);
  const j=await dg('/database/search',Object.assign({type:'release',format:'Vinyl',per_page:10},p));sc.set(k,j.results||[]);return j.results||[]}
 async function release(id){if(rc.has(id))return rc.get(id);const j=await dg('/releases/'+id);rc.set(id,j);return j}
-async function getPrice(id){
- const o={};
- try{const s=await dg('/marketplace/stats/'+id,{curr_abbr:'EUR'});o.low=s.lowest_price;o.n=s.num_for_sale}catch(e){o.err=e.message}
- try{const p=await dg('/marketplace/price_suggestions/'+id);o.vg=p['Very Good Plus (VG+)']}catch(e){}
- return o;
+async function rate(from,to){if(from===to)return 1;const k=from+to;if(fx.has(k))return fx.get(k);
+ const r=await fetch('https://api.frankfurter.dev/v1/latest?base='+from+'&symbols='+to);const j=await r.json();const x=j.rates&&j.rates[to];if(!x)throw new Error('Kurs fehlt');fx.set(k,x);return x}
+async function toCur(p,cur){if(!p||p.value==null)return null;const c=p.currency||cur;return c===cur?p.value:p.value*await rate(c,cur)}
+async function getPrice(id,cur){
+ const k=id+'|'+cur;if(pc.has(k))return pc.get(k);
+ const o={cur};
+ try{const s=await dg('/marketplace/stats/'+id,{curr_abbr:cur});o.low=await toCur(s.lowest_price,cur);o.n=s.num_for_sale}catch(e){o.err=e.message}
+ try{const p=await dg('/marketplace/price_suggestions/'+id);
+  const nm=p['Near Mint (NM or M-)']||p['Mint (M)']||p['Very Good Plus (VG+)'];o.hi=await toCur(nm,cur)}catch(e){}
+ pc.set(k,o);return o;
 }
-const eur=p=>p&&p.value!=null?new Intl.NumberFormat('de-DE',{style:'currency',currency:p.currency||'EUR'}).format(p.value):'–';
+const eur=(v,cur)=>v==null?'–':new Intl.NumberFormat('de-DE',{style:'currency',currency:cur||ui.cur}).format(v);
+function rangeText(p){
+ if(p.low==null&&p.hi==null)return p.n===0?'kein Angebot':'–';
+ if(p.low!=null&&p.hi!=null){const a=Math.min(p.low,p.hi),b=Math.max(p.low,p.hi);return '≈ '+eur(a,p.cur)+' – '+eur(b,p.cur)}
+ return 'ab '+eur(p.low!=null?p.low:p.hi,p.cur);
+}
 
 const STOP=new Set(['side','one','two','all','songs','the','and','for','records','record','produced','recorded','published','music','ltd','with','from','thanks','manufactured','distributed','made','printed','engineered','arranged','photograph','designed','artwork','special','strings','horns','stereo','digital','recording','written','copyright','reserved','rights','production','england','germany','london']);
 const tok=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().split(' ').filter(w=>w.length>=3);
@@ -154,71 +261,93 @@ const sleepUntil=(ms,id)=>new Promise(r=>{const end=Date.now()+ms;const iv=setIn
 async function getDevice(force){
  if(devId&&!force)return devId;
  const d=(await sp('/me/player/devices')).devices||[];
- const a=d.find(x=>x.is_active)||d.find(x=>x.type==='Smartphone')||d[0];
- if(!a)throw new Error('Kein Spotify-Gerät gefunden. Spotify-App öffnen, kurz einen Titel starten.');
+ const pref=ui.mode==='desktop'?'Computer':'Smartphone';
+ const a=d.find(x=>x.is_active)||d.find(x=>x.type===pref)||d[0];
+ if(!a)throw new Error('Kein Spotify-Gerät gefunden. Spotify-App (oder open.spotify.com) öffnen und kurz einen Titel starten.');
  devId=a.id;return devId;
 }
-async function playAt(uri,pos){
+async function playAt(uri,pos,idx){
+ const body=Array.isArray(uri)?{uris:uri,offset:{position:idx||0},position_ms:0}:{uris:[uri],position_ms:Math.max(0,Math.floor(pos))};
  for(let i=0;i<2;i++){
-  try{const d=await getDevice(i>0);await sp('/me/player/play?device_id='+d,{method:'PUT',body:JSON.stringify({uris:[uri],position_ms:Math.max(0,Math.floor(pos))})});return}
+  try{const d=await getDevice(i>0);await sp('/me/player/play?device_id='+d,{method:'PUT',body:JSON.stringify(body)});return}
   catch(e){devId=null;if(i)throw e}
  }
 }
 function mark(){document.querySelectorAll('.tr').forEach((e,i)=>e.classList.toggle('cur',i===cur))}
 async function startFrom(i){
  run++;const id=run;
+ if(ui.free){cur=i;mark();try{await playAt(tracks.map(t=>t.uri),0,i)}catch(e){ov(e.message,1)}return}
  for(cur=i;cur<tracks.length;cur++){
   if(run!==id)return;mark();const t=tracks[cur];
   try{
-   await playAt(t.uri,0);await sleepUntil(cfg.t1*1000,id);if(run!==id)return;
+   await playAt(t.uri,cfg.s0*1000);await sleepUntil(cfg.t1*1000,id);if(run!==id)return;
    const pos=t.dur>(cfg.jump+cfg.len)*1000+3000?cfg.jump*1000:Math.floor(t.dur*.5);
    await playAt(t.uri,pos);await sleepUntil(cfg.len*1000,id);
+   if(run===id&&!cfg.skip){try{await sp('/me/player/pause',{method:'PUT'})}catch(e){}return}
   }catch(e){ov(e.message,1);return}
  }
  if(run===id){try{await sp('/me/player/pause',{method:'PUT'})}catch(e){}}
 }
 async function stop(){run++;try{await sp('/me/player/pause',{method:'PUT'})}catch(e){}}
 
-let locked=null,meta=null,price=null,spot=null,grid=null,lastDecided=null,tries=0,pend=null,scanStart=Date.now();
+let locked=null,lockedRel=null,meta=null,price=null,spot=null,grid=null,lastDecided=null,tries=0,pend=null,scanStart=Date.now();
+function fallbackCard(){
+ const q=encodeURIComponent((meta.artist+' '+meta.album).trim());const t=esc(((meta.artist?meta.artist+' – ':'')+meta.album));
+ const S=[['tidal','T','Tidal','https://listen.tidal.com/search?q='+q],['yt','▶','YouTube','https://www.youtube.com/results?search_query='+q+'+full+album'],['apple','♪','Apple Music','https://music.apple.com/search?term='+q]].filter(x=>ui[x[0]]);
+ let h='<div class="card"><b>No Match auf Spotify</b>';
+ if(S.length){h+='<div class="small">Weitere Quellen, in der Reihenfolge der Einstellungen:</div>'+S.map(x=>'<a class="srow" target="_blank" href="'+x[3]+'"><span class="badge">'+x[1]+'</span><span><b>'+t+'</b><div class="small">'+x[2]+' · Suche öffnen</div></span></a>').join('')}
+ else h+='<div class="small">Keine weitere Quelle aktiv (Menü → Add sources).</div>';
+ return h+'</div>';
+}
 function render(){
  let h='';
- if(grid){h+='<div class="card"><div class="small">Nicht eindeutig – bitte Cover antippen</div><div class="grid">'+grid.map((c,i)=>'<div class="g" data-g="'+i+'"><img src="'+esc(c.r.thumb)+'"><div class="small">'+esc(c.r.title)+'</div><div class="small">'+esc([c.r.year,c.r.country].filter(Boolean).join(' · '))+'</div></div>').join('')+'</div></div>'}
+ if(grid){h+='<div class="card"><div class="small">Nicht eindeutig – Cover mit der Platte vergleichen und antippen</div><div class="grid">'+grid.map((c,i)=>'<div class="g" data-g="'+i+'"><img src="'+esc(c.r.thumb)+'"><div class="small">'+esc(c.r.title)+'</div><div class="small">'+esc([c.r.year,c.r.country].filter(Boolean).join(' · '))+'</div></div>').join('')+'</div></div>'}
  if(meta){
   h+='<div class="card"><b>'+esc(meta.artist)+' – '+esc(meta.album)+'</b><div class="small">'+esc([meta.label,meta.catno,meta.year].filter(Boolean).join(' · '))+'</div>';
-  if(price)h+='<div class="price">ab '+eur(price.low)+'</div><div class="small">Discogs, günstigstes Angebot'+(price.n!=null?' · '+price.n+' im Angebot':'')+(price.vg?' · Vorschlag VG+: '+eur(price.vg):'')+(price.err&&!price.low?' · '+esc(price.err):'')+'</div>';
-  else h+='<div class="small">Preis wird geladen…</div>';
-  h+='</div>';
-  if(tracks.length){h+='<div class="card"><div class="row"><button class="sec" id="prev">⏮</button><button class="sec" id="stop">⏸</button><button id="next">⏭ Nächster Titel</button></div><div style="margin-top:8px">'+tracks.map((t,i)=>'<div class="tr" data-i="'+i+'"><span>'+(i+1)+'. '+esc(t.name)+'</span><span class="small">'+Math.floor(t.dur/60000)+':'+String(Math.floor(t.dur/1000)%60).padStart(2,'0')+'</span></div>').join('')+'</div></div>'}
-  else if(spot===false){const q=encodeURIComponent(meta.artist+' '+meta.album);h+='<div class="card">Nicht auf Spotify. <a target="_blank" href="https://listen.tidal.com/search?q='+q+'">Tidal</a> · <a target="_blank" href="https://www.youtube.com/results?search_query='+q+'+full+album">YouTube</a></div>'}
+  if(ui.price){
+   if(price)h+='<div class="price">'+esc(rangeText(price))+'</div><div class="small">Discogs: günstigstes Angebot bis Preisvorschlag NM'+(price.n!=null?' · '+price.n+' im Angebot':'')+(price.err&&price.low==null?' · '+esc(price.err):'')+'</div>';
+   else h+='<div class="small">Preis wird geladen…</div>';
+  }
+  h+='<button class="sec" id="rePress" style="margin-top:8px">Andere Pressung wählen</button></div>';
+  if(ui.prev){
+   if(tracks.length){h+='<div class="card"><div class="row"><button class="sec" id="prev">⏮</button><button class="sec" id="stop">⏸</button><button id="next">⏭ Nächster Titel</button></div><div style="margin-top:8px">'+tracks.map((t,i)=>'<div class="tr" data-i="'+i+'"><span>'+(i+1)+'. '+esc(t.name)+'</span><span class="small">'+Math.floor(t.dur/60000)+':'+String(Math.floor(t.dur/1000)%60).padStart(2,'0')+'</span></div>').join('')+'</div></div>'}
+   else if(spot===false)h+=fallbackCard();
+  }
  }
  $('#out').innerHTML=h;
  document.querySelectorAll('.g').forEach(e=>e.onclick=()=>lock(grid[+e.dataset.g]));
  document.querySelectorAll('.tr').forEach(e=>e.onclick=()=>startFrom(+e.dataset.i));
+ if($('#rePress'))$('#rePress').onclick=()=>{if(lastDecided&&lastDecided.length)showGrid(lastDecided);else ov('Keine weiteren Treffer vorhanden.')};
  if($('#next')){$('#next').onclick=()=>startFrom(Math.min(cur+1,tracks.length-1));$('#prev').onclick=()=>startFrom(Math.max(cur-1,0));$('#stop').onclick=stop;mark()}
+}
+function loadPrice(c){const cu=ui.cur;getPrice(c.r.id,cu).then(p=>{if(locked===c&&ui.cur===cu){price=p;render()}})}
+async function preview(c){
+ try{
+  let s=await findSpotify(meta.artist,meta.album);
+  if(!s){const t=await spotTracks(meta.artist,(lockedRel&&lockedRel.tracklist)||[]);if(t.length)s={name:meta.album,tracks:t}}
+  if(locked!==c||!ui.prev)return;
+  spot=s||false;tracks=s?s.tracks:[];render();if(tracks.length)startFrom(0);
+ }catch(e){ov(e.message,1)}
 }
 async function lock(c){
  run++;locked=c;pend=null;grid=null;price=null;spot=null;tracks=[];cur=-1;
- const rel=c.rel||await release(c.r.id);
+ const rel=c.rel||await release(c.r.id);lockedRel=rel;
  const artist=(rel.artists||[]).map(a=>a.name.replace(/\s*\(\d+\)$/,'').replace(/\*$/,'')).join(', ').replace(/^Various$/i,'');
  const album=rel.title;const lab=(rel.labels||[])[0]||{};
  meta={artist,album,year:rel.year,label:lab.name,catno:lab.catno};render();
  ov('Gefunden: '+(artist?artist+' – ':'')+album);
- getPrice(c.r.id).then(p=>{if(locked===c){price=p;render()}});
- try{
-  let s=await findSpotify(artist,album);
-  if(!s){const t=await spotTracks(artist,rel.tracklist||[]);if(t.length)s={name:album,tracks:t}}
-  if(locked!==c)return;
-  spot=s||false;tracks=s?s.tracks:[];render();if(tracks.length)startFrom(0);
- }catch(e){ov(e.message,1)}
+ if(ui.price)loadPrice(c);
+ if(ui.prev)await preview(c);
 }
 function showGrid(d){grid=d.slice(0,6);render()}
-async function identify(all,text,manual){
+async function identify(all,text,manual,force){
  ov('Suche in Discogs…');
- const arr=await rank(all,text,manual);if(!arr)return;
+ const arr=await rank(all,text,manual);if(!arr){if(force)ov('Zu wenig Text erkannt. Näher ran, ruhiger halten.',1);return}
  const d=distinct(arr);lastDecided=d;
- if(!d.length){ov('Kein Treffer, weiter…');return}
+ if(!d.length){ov('Kein Treffer.');return}
  if(manual){showGrid(d);return}
  const b=d[0],m=d.length>1?b.s-d[1].s:1;
+ if(force){if(b.s>=.5&&m>=.08)await lock(b);else{showGrid(d);ov('Nicht eindeutig – Cover antippen.')}return}
  if(!locked){if(b.s>=.5&&m>=.08)await lock(b);else if(Date.now()-scanStart>12000||++tries>=3){showGrid(d);ov('Nicht eindeutig – Cover antippen.')}else ov('Unsicher, scanne weiter…')}
  else if(b.k!==locked.k&&b.s>=.65&&m>=.12){if(pend===b.k)await lock(b);else pend=b.k}
 }
@@ -237,44 +366,67 @@ function gray(c){const w=c.width,h=c.height,x=c.getContext('2d'),id=x.getImageDa
  let a=0,lo=0,hi=255;while(lo<255&&(a+=hist[lo])<n*.01)lo++;a=0;while(hi>0&&(a+=hist[hi])<n*.01)hi--;
  const s=255/Math.max(1,hi-lo);for(let i=0;i<n;i++){const v=Math.max(0,Math.min(255,(d[4*i]-lo)*s));d[4*i]=d[4*i+1]=d[4*i+2]=v}x.putImageData(id,0,0)}
 const jac=(a,b)=>{let i=0;for(const t of a)if(b.has(t))i++;return i/Math.max(1,a.size+b.size-i)};
-let worker=null,active=false,busy=false,buf=[],lastTok=null,alt=0;
+let worker=null,active=false,busy=false,buf=[],lastTok=null,alt=0,stream=null;
+async function ocrFrame(mode){const c=grab();if(!c.width)return '';mode===0?adaptive(c):gray(c);const {data}=await worker.recognize(c);return data.text||''}
 async function cycle(){
- const c=grab();if(!c.width)return;(alt++%2===0)?adaptive(c):gray(c);
- const {data}=await worker.recognize(c);const text=data.text||'';
+ const text=await ocrFrame(alt++%2);
  buf.push(text);if(buf.length>3)buf.shift();
  const all=buf.join('\n'),T=new Set(tok(all));
  if(T.size<8){ov('Rückseite ruhig und nah vor die Kamera halten…');return}
  if(!locked&&lastDecided&&Date.now()-scanStart>12000&&!grid){showGrid(lastDecided);ov('Nicht eindeutig – Cover antippen.')}
  if(lastTok&&jac(T,lastTok)>.85)return;
- lastTok=T;await identify(all,text,false);
+ lastTok=T;await identify(all,text,false,false);
 }
+async function scanOnce(){
+ if(busy||!worker)return;busy=true;
+ try{ov('Scanne…');const a=await ocrFrame(0),b=await ocrFrame(1);buf=[a,b];lastTok=null;
+  await identify(a+'\n'+b,a.length>b.length?a:b,false,true)}
+ catch(e){ov(e.message,1)}finally{busy=false}
+}
+$('#scanBtn').onclick=scanOnce;$('#vid').onclick=()=>{if(ui.cap==='manual')scanOnce()};
 async function loop(){
  while(active){
-  if(!busy&&!document.hidden){busy=true;try{await cycle()}catch(e){ov(e.message,1);await sleep(3000)}finally{busy=false}}
+  if(ui.cap==='auto'&&!busy&&!document.hidden){busy=true;try{await cycle()}catch(e){ov(e.message,1);await sleep(3000)}finally{busy=false}}
   await sleep(locked?2500:400);
  }
 }
+async function listCams(){
+ const d=(await navigator.mediaDevices.enumerateDevices()).filter(x=>x.kind==='videoinput');
+ $('#camSel').innerHTML='<option value="">Standardgerät</option>'+d.map((x,i)=>'<option value="'+esc(x.deviceId)+'">'+esc(x.label||('Kamera '+(i+1)))+'</option>').join('');
+ $('#camSel').value=d.some(x=>x.deviceId===ui.cam)?ui.cam:'';
+}
+async function openCam(){
+ if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+ const size={width:{ideal:1920},height:{ideal:1080}};
+ const tryGet=v=>navigator.mediaDevices.getUserMedia({video:v,audio:false});
+ if(ui.mode==='desktop'){
+  try{stream=await tryGet(ui.cam?Object.assign({deviceId:{exact:ui.cam}},size):size)}
+  catch(e){if(!ui.cam)throw e;ui.cam='';saveUI();stream=await tryGet(size)}
+ }else stream=await tryGet(Object.assign({facingMode:{ideal:'environment'}},size));
+ const v=$('#vid');v.srcObject=stream;await v.play();
+ if(ui.mode==='desktop')await listCams();
+}
 async function startCam(){
  try{
-  if(!cfg.cid||!cfg.dis||!localStorage.getItem('lpt')){$('#set').open=true;ov('Erst Einstellungen ausfüllen und bei Spotify anmelden.',1);return}
+  if(!cfg.cid||!cfg.dis||!connected()){openP();ov('Erst Setup I/O ausfüllen und Spotify verbinden (Sources).',1);return}
   $('#camBtn').style.display='none';
-  const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
-  const v=$('#vid');v.srcObject=s;await v.play();
-  ov('Lade Texterkennung (einmalig, ca. 10 MB)…');
-  worker=await Tesseract.createWorker('eng');
-  try{await worker.setParameters({tessedit_pageseg_mode:'11'})}catch(e){}
-  ov('Halte die Rückseite einer Platte vor die Kamera.');
-  active=true;scanStart=Date.now();loop();
+  await openCam();
+  if(!worker){ov('Lade Texterkennung (einmalig, ca. 10 MB)…');
+   worker=await Tesseract.createWorker('eng');
+   try{await worker.setParameters({tessedit_pageseg_mode:'11'})}catch(e){}}
+  ov(ui.cap==='auto'?'Halte die Rückseite einer Platte vor die Kamera.':'Rückseite ins Bild halten, dann „Scannen“ tippen.');
+  if(!active){active=true;scanStart=Date.now();loop()}
+  applyUI();
  }catch(e){$('#camBtn').style.display='';ov('Kamera/OCR: '+e.message,1)}
 }
 $('#camBtn').onclick=startCam;
-$('#reset').onclick=()=>{run++;locked=null;meta=null;price=null;spot=null;grid=null;tracks=[];lastDecided=null;lastTok=null;buf=[];tries=0;pend=null;scanStart=Date.now();render();stop();ov('Bereit für die nächste Platte.')};
+$('#reset').onclick=()=>{run++;locked=null;lockedRel=null;meta=null;price=null;spot=null;grid=null;tracks=[];lastDecided=null;lastTok=null;buf=[];tries=0;pend=null;scanStart=Date.now();render();stop();ov('Bereit für die nächste Platte.')};
 $('#mgo').onclick=async()=>{const v=$('#manual').value.trim();if(!v)return;
- try{await identify(v,v,true)}catch(e){ov(e.message,1)}};
-(async()=>{fill();
+ try{await identify(v,v,true,false)}catch(e){ov(e.message,1)}};
+(async()=>{fill();applyUI();
  const q=new URLSearchParams(location.search);
  if(q.get('code')){try{await tokenReq({client_id:cfg.cid,grant_type:'authorization_code',code:q.get('code'),redirect_uri:REDIR,code_verifier:localStorage.getItem('lpv')});history.replaceState({},'',REDIR);fill();ov('Spotify verbunden.')}catch(e){ov(e.message,1)}}
  else if(q.get('error'))ov('Spotify: '+q.get('error'),1);
- if(cfg.cid&&cfg.dis&&localStorage.getItem('lpt'))startCam();else $('#set').open=true;
+ if(cfg.cid&&cfg.dis&&connected())startCam();else openP();
 })();
 </script></body></html>
