@@ -1,0 +1,43 @@
+name: Integrate single alternatives
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/single-alternatives.yml', 'single-alternatives.js']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Allow appropriate singles and integrate alternatives
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('album-preview.js')
+          s=p.read_text()
+          old="a.album_type==='album'&&artistFits"
+          new="(a.album_type==='album'||a.album_type==='single'&&window.vinylSingleRelease?.())&&artistFits"
+          if old in s:
+              assert s.count(old)==1
+              s=s.replace(old,new,1)
+          else:
+              assert new in s
+          s=s.replace('Spotify album: ','Spotify release: ').replace('No verified Spotify album match. Single versions are not substituted.','No verified Spotify release match. Choose an alternative below if available.').replace('Not available on Spotify','No verified Spotify match')
+          p.write_text(s)
+          p=Path('index.html')
+          s=p.read_text()
+          assert 'album-preview.js' in s
+          s=re.sub(r'album-preview\.js(?:\?[^"\n]*)?', 'album-preview.js?v=20261012-21', s)
+          s=re.sub(r'<script src="single-alternatives\.js[^"\n]*"></script>\s*','',s)
+          s=s.replace('</body>','<script src="single-alternatives.js?v=20261012-21"></script>\n</body>')
+          p.write_text(s)
+          PY
+          node --check album-preview.js
+          node --check single-alternatives.js
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add album-preview.js index.html
+          if ! git diff --cached --quiet; then git commit -m "Integrate alternative sources and explicit single previews"; git push; fi
