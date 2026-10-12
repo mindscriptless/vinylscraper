@@ -1,0 +1,49 @@
+name: Integrate manual tracklist fallback
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/manual-tracklist.yml', 'manual-tracklist.js']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Disable automatic reverse discovery and add manual fallback
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('new-functions.js')
+          s=p.read_text()
+          old="let reverseEnabled=localStorage.getItem('lpReverseTracks')!=='false';"
+          new='let reverseEnabled=false;'
+          if old in s:
+              assert s.count(old)==1
+              s=s.replace(old,new,1)
+          else:
+              assert new in s
+          marker="q('#capSw').closest('.mrow').after(row);row.querySelector('input').checked=reverseEnabled;"
+          replacement="q('#capSw').closest('.mrow').after(row);row.hidden=true;row.style.display='none';row.querySelector('input').checked=reverseEnabled;"
+          if marker in s:
+              assert s.count(marker)==1
+              s=s.replace(marker,replacement,1)
+          else:
+              assert replacement in s
+          p.write_text(s)
+          p=Path('index.html')
+          s=p.read_text()
+          assert 'camera-mobile-layout.js' in s and 'ocr-query-cleanup.js' in s
+          s=re.sub(r'new-functions\.js(?:\?[^"\n]*)?', 'new-functions.js?v=20261012-23', s)
+          s=re.sub(r'<script src="manual-tracklist\.js[^"\n]*"></script>\s*','',s)
+          s=s.replace('</body>','<script src="manual-tracklist.js?v=20261012-23"></script>\n</body>')
+          p.write_text(s)
+          PY
+          node --check new-functions.js
+          node --check manual-tracklist.js
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add new-functions.js index.html
+          if ! git diff --cached --quiet; then git commit -m "Integrate explicit tracklist search and camera control states"; git push; fi
