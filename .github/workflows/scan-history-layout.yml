@@ -1,0 +1,32 @@
+name: Integrate scan and history layout
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/scan-history-layout.yml', 'separate-scan.js', 'history-columns.js']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate scan control and category columns
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text()
+          assert 'new-functions.js' in s and 'history-tools.js' in s
+          for name in ['separate-scan','history-columns']:
+              s=re.sub(r'<script src="'+name+r'\.js[^"\n]*"></script>\s*','',s)
+          s=s.replace('</body>','<script src="separate-scan.js?v=20261012-20"></script>\n<script src="history-columns.js?v=20261012-20"></script>\n</body>')
+          p.write_text(s)
+          PY
+          node --check separate-scan.js
+          node --check history-columns.js
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          if ! git diff --cached --quiet; then git commit -m "Integrate scan control and compact history columns"; git push; fi
