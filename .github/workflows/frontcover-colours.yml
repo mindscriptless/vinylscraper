@@ -1,0 +1,30 @@
+name: Integrate experimental frontcover colours
+on:
+  push:
+    branches: [main]
+    paths: ['frontcover-colours.js', '.github/workflows/frontcover-colours.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate and integrate
+        run: |
+          node --check frontcover-colours.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text()
+          assert 'photo-hints.js' in s and 'player-covers-update.js' in s and '</body>' in s
+          s=re.sub(r'<script src="frontcover-colours\.js[^"\n]*"></script>\s*','',s)
+          s=s.replace('</body>','<script src="frontcover-colours.js?v=20261012-29"></script>\n</body>')
+          p.write_text(s)
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          if ! git diff --cached --quiet; then git commit -m "Integrate local red-frame frontcover comparison prototype"; git push; fi
