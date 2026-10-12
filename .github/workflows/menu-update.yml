@@ -1,0 +1,30 @@
+name: Integrate menu help
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/menu-update.yml', 'menu-tools.js']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate menu extension
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text()
+          assert 'history-tools.js' in s, 'History tools must be integrated first'
+          s=re.sub(r'<script src="menu-tools\.js[^"\n]*"></script>\s*','',s)
+          s=s.replace('</body>','<script src="menu-tools.js?v=20261012-8"></script>\n</body>')
+          p.write_text(s)
+          PY
+          node --check menu-tools.js
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          if ! git diff --cached --quiet; then git commit -m "Integrate menu help, history preference and save close"; git push; fi
