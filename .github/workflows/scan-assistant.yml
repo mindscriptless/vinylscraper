@@ -1,0 +1,50 @@
+name: Integrate manual multi-scan assistant
+on:
+  push:
+    branches: [main]
+    paths: ['scan-assistant.js', '.github/workflows/scan-assistant.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate evidence packet hooks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('photo-hints.js')
+          s=p.read_text()
+          old='async function catalogResults(text){'
+          new="async function catalogResults(text){text=window.vinylScanPacket?.catalogText||text;"
+          if new not in s:
+              assert s.count(old)==1
+              s=s.replace(old,new,1)
+          p.write_text(s)
+          p=Path('frontcover-colours.js')
+          s=p.read_text()
+          marker="const resetBefore=q('#reset').onclick;"
+          hook="window.vinylUseFrontcoverCanvas=canvas=>{if(!canvas?.width||!canvas.height)return;wasFront=true;diagnostic.hidden=false;guide.style.visibility='visible';return remember(canvas,{x:0,y:0,w:canvas.width,h:canvas.height})};\n"
+          if 'window.vinylUseFrontcoverCanvas=' not in s:
+              assert s.count(marker)==1
+              s=s.replace(marker,hook+marker,1)
+          p.write_text(s)
+          p=Path('index.html')
+          s=p.read_text()
+          assert 'catalogue-weighting.js' in s and 'frontcover-colours.js' in s and '</body>' in s
+          for name in ['photo-hints','frontcover-colours']:
+              s=re.sub(re.escape(name)+r'\.js(?:\?[^"\n]*)?',name+'.js?v=20261012-30',s)
+          s=re.sub(r'<script src="scan-assistant\.js[^"\n]*"></script>\s*','',s)
+          s=s.replace('</body>','<script src="scan-assistant.js?v=20261012-30"></script>\n</body>')
+          p.write_text(s)
+          PY
+          node --check scan-assistant.js
+          node --check photo-hints.js
+          node --check frontcover-colours.js
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html photo-hints.js frontcover-colours.js
+          if ! git diff --cached --quiet; then git commit -m "Integrate separate multi-shot evidence and frontcover reuse"; git push; fi
