@@ -50,6 +50,7 @@ a.srow{display:flex;gap:12px;align-items:center;text-decoration:none;color:var(-
 .badge{width:44px;height:44px;border-radius:10px;background:var(--spare);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style id="desktop-camera-width">body.desktop #main:has(#out:empty){grid-template-columns:minmax(0,1fr)}body.desktop #out:empty{display:none}body.desktop #main>div:first-child{min-width:0}body.desktop #cam{width:100%}</style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <path id="record-outline" d="M 228 10 L 272 10 Q 284 10 286 24 L 291 76 Q 308 81 327 91 L 367 58 Q 378 49 388 59 L 441 112 Q 451 122 442 133 L 409 173 Q 419 192 424 209 L 476 214 Q 490 216 490 228 L 490 272 Q 490 284 476 286 L 424 291 Q 419 308 409 327 L 442 367 Q 451 378 441 388 L 388 441 Q 378 451 367 442 L 327 409 Q 308 419 291 424 L 286 476 Q 284 490 272 490 L 228 490 Q 216 490 214 476 L 209 424 Q 192 419 173 409 L 133 442 Q 122 451 112 441 L 59 388 Q 49 378 58 367 L 91 327 Q 81 308 76 291 L 24 286 Q 10 284 10 272 L 10 228 Q 10 216 24 214 L 76 209 Q 81 192 91 173 L 58 133 Q 49 122 59 112 L 112 59 Q 122 49 133 58 L 173 91 Q 192 81 209 76 L 214 24 Q 216 10 228 10 Z"/>
@@ -432,8 +433,9 @@ $('#mgo').onclick=async()=>{const v=$('#manual').value.trim();if(!v)return;
 </script><script src="refinements.js?v=20261012-3"></script>
 <script src="patch-batch.js?v=20261012-13"></script>
 <script src="history-tools.js?v=20261012-6"></script>
-<script src="recognition-tools.js?v=20261012-5"></script>
+<script src="recognition-tools.js?v=20261012-14"></script>
 <script src="menu-tools.js?v=20261012-11"></script>
-<script src="new-functions.js?v=20261012-13"></script>
+<script src="new-functions.js?v=20261012-14"></script>
 <script src="album-preview.js?v=20261012-13"></script>
+<script src="ocr-query-cleanup.js?v=20261012-14"></script>
 </body></html>

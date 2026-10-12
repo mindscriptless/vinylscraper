@@ -10,8 +10,8 @@ const previousOv=ov;ov=(message,error)=>previousOv(String(message).replace(/Rüc
 const q=s=>document.querySelector(s),input=q('#manual');let edited=false,raw='',image='',state='No scan yet.',generation=0,lastKey='',lastTime=0;
 input.addEventListener('input',()=>edited=true);
 function lines(text){return String(text||'').split(/\r?\n|[■▪●]/).map(x=>x.replace(/^\s*(?:side\s*(?:one|two|[ab12])\s*[:.\-]?|[ab]?\d{1,2}[.)]\s*)/i,'').replace(/\s+\d{1,2}:\d{2}\s*$/,'').replace(/\s+/g,' ').trim()).filter(x=>x.length>=5&&x.length<=90&&!/(copyright|produced|producer|published|manufactured|distributed|reserved|engineer|\brpm\b)/i.test(x))}
-function titleHint(text){return lines(text).find(x=>/\b\d{1,2}\b/.test(x)&&!/^\d|\d{3}/.test(x)&&!/^(side|track|song)\b/i.test(x))||lines(text).find(x=>!/^\d/.test(x)&&x.length<65)||''}
-function songHints(text){return [...new Set(lines(text).filter(x=>tok(x).length>=2&&!/\b(?:19|20)\d{2}\b/.test(x)))].slice(0,6)}
+function titleHint(text){return window.vinylOCRQuery(text)}
+function songHints(text){return [...new Set(window.vinylOCRLines(text))].slice(0,6)}
 const diagnostic=document.createElement('details');diagnostic.className='card';diagnostic.innerHTML='<summary>OCR diagnostics</summary><p class="small" data-state></p><img alt="Last image passed to OCR" style="max-width:100%;max-height:240px;display:none"><pre style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>';q('#main').after(diagnostic);
 function update(){diagnostic.querySelector('[data-state]').textContent=state;diagnostic.querySelector('pre').textContent=raw||'No OCR text has reached the matching stage.';const img=diagnostic.querySelector('img');img.style.display=image?'block':'none';if(image)img.src=image}
 const capture=grab;grab=()=>{const canvas=capture();try{image=canvas.toDataURL('image/jpeg',.7);state='Captured '+canvas.width+' × '+canvas.height+' px; waiting for OCR.';update()}catch(e){}return canvas};
