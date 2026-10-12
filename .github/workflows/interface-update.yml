@@ -2,7 +2,7 @@ name: Integrate interface update
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/interface-update.yml', 'refinements.js']
+    paths: ['.github/workflows/interface-update.yml', 'refinements.js', 'patch-batch.js']
   workflow_dispatch:
 permissions:
   contents: write
@@ -11,20 +11,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Update and verify index
+      - name: Integrate and verify
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p=Path('index.html')
-          s=p.read_text()
-          s=s.replace('const ov=(m,e)=>','let ov=(m,e)=>')
-          tag='<script src="refinements.js?v=20261012-1"></script>'
-          if tag not in s:
-              s=s.replace('</body>',tag+'\n</body>')
+          s=p.read_text().replace('const ov=(m,e)=>','let ov=(m,e)=>')
+          s=re.sub(r'<script src="(?:refinements|fixes|patch-batch)\.js[^"\n]*"></script>\s*','',s)
+          tags='<script src="refinements.js?v=20261012-3"></script>\n<script src="patch-batch.js?v=20261012-3"></script>'
+          s=s.replace('</body>',tags+'\n</body>')
           p.write_text(s)
           PY
           node --check refinements.js
+          node --check patch-batch.js
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add index.html
-          if ! git diff --cached --quiet; then git commit -m "Integrate interface and fix mutable status binding"; git push; fi
+          if ! git diff --cached --quiet; then git commit -m "Integrate sample finder and bugfix batch"; git push; fi
