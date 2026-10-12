@@ -1,0 +1,53 @@
+name: Integrate OCR query cleanup
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/ocr-query-cleanup.yml', 'ocr-query-cleanup.js']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use cleaned OCR suggestions and update interface
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('new-functions.js')
+          s=p.read_text()
+          s,n=re.subn(r'^function titleHint\(text\)\{[^\n]*\}', 'function titleHint(text){return window.vinylOCRQuery(text)}', s,flags=re.M)
+          assert n==1
+          s,n=re.subn(r'^function songHints\(text\)\{[^\n]*\}', 'function songHints(text){return [...new Set(window.vinylOCRLines(text))].slice(0,6)}', s,flags=re.M)
+          assert n==1
+          p.write_text(s)
+          p=Path('recognition-tools.js')
+          s=p.read_text()
+          old='externalQuery=manual?String(text).trim():queryFrom(text)'
+          new='externalQuery=manual?String(text).trim():window.vinylOCRQuery(text)'
+          if old in s:
+              assert s.count(old)==1
+              s=s.replace(old,new,1)
+          else:
+              assert new in s
+          p.write_text(s)
+          p=Path('index.html')
+          s=p.read_text()
+          for name in ['new-functions','recognition-tools']:
+              s=re.sub(name+r'\.js(?:\?[^"\n]*)?',name+'.js?v=20261012-14',s)
+          s=re.sub(r'<style id="desktop-camera-width">.*?</style>\s*','',s,flags=re.S)
+          css='<style id="desktop-camera-width">body.desktop #main:has(#out:empty){grid-template-columns:minmax(0,1fr)}body.desktop #out:empty{display:none}body.desktop #main>div:first-child{min-width:0}body.desktop #cam{width:100%}</style>'
+          s=s.replace('</head>',css+'\n</head>')
+          s=re.sub(r'<script src="ocr-query-cleanup\.js[^"\n]*"></script>\s*','',s)
+          s=s.replace('</body>','<script src="ocr-query-cleanup.js?v=20261012-14"></script>\n</body>')
+          p.write_text(s)
+          PY
+          node --check new-functions.js
+          node --check recognition-tools.js
+          node --check ocr-query-cleanup.js
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add new-functions.js recognition-tools.js index.html
+          if ! git diff --cached --quiet; then git commit -m "Integrate clean OCR queries and Search layout"; git push; fi
