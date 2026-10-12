@@ -1,0 +1,65 @@
+name: Integrate contextual catalogue weighting
+on:
+  push:
+    branches: [main]
+    paths: ['catalogue-weighting.js', '.github/workflows/catalogue-weighting.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate scores and validate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('photo-hints.js')
+          s=p.read_text()
+          start=s.index('async function catalogResults(text){')
+          end=s.index('\ndg=async',start)
+          new="async function catalogResults(text){const ns=cats(text),key=JSON.stringify(ns.map(c=>({c,weight:window.vinylCatalogueWeight?.(text,{catno:c})??.4})));if(catCache.has(key))return catCache.get(key);const pool=new Map();for(const c of ns)for(const value of [...new Set([c,compact(c)])]){const j=await dgBefore('/database/search',{type:'release',format:'Vinyl',per_page:50,catno:value});for(const r of j.results||[])if(fits(r,ns)){const weight=window.vinylCatalogueWeight?.(text,r)??.4;pool.set(r.id,{...r,_catalog:1,_catalogWeight:weight})}}const list=[...pool.values()].sort((a,b)=>b._catalogWeight-a._catalogWeight);catCache.set(key,list);return list}"
+          s=s[:start]+new+s[end:]
+          s=s.replace('list.map(r=>({r,s:1,cat:1,at:0,tr:0}))','list.map(r=>({r,s:r._catalogWeight??.4,cat:1,at:0,tr:0}))')
+          p.write_text(s)
+          p=Path('tracklist-upgrade.js')
+          s=p.read_text()
+          old='+.25*c.cat'
+          new='+.25*(Number(c.r._catalogWeight)||c.cat)'
+          if old in s:
+              assert s.count(old)==1
+              s=s.replace(old,new,1)
+          else:
+              assert new in s
+          s=s.replace('sort((a,b)=>b.votes-a.votes)', 'sort((a,b)=>b.votes-a.votes||(Number(b.r._catalogWeight)||0)-(Number(a.r._catalogWeight)||0))')
+          p.write_text(s)
+          p=Path('recognition-tools.js')
+          s=p.read_text()
+          old='pool.set(r.id,{r,cat:1,at:0,tr:0,s:0})'
+          new='pool.set(r.id,{r,cat:1,at:0,tr:0,s:window.vinylCatalogueWeight?.(all,r)??.4})'
+          if old in s:
+              assert s.count(old)==1
+              s=s.replace(old,new,1)
+          else:
+              assert new in s
+          s=s.replace('lastDecided=distinct([...pool.values()]);','lastDecided=distinct([...pool.values()].sort((a,b)=>(b.s||0)-(a.s||0)));')
+          p.write_text(s)
+          p=Path('index.html')
+          s=p.read_text()
+          assert 'player-covers-update.js' in s and '</body>' in s
+          for name in ['photo-hints','tracklist-upgrade','recognition-tools']:
+              s=re.sub(re.escape(name)+r'\.js(?:\?[^"\n]*)?',name+'.js?v=20261012-28',s)
+          s=re.sub(r'<script src="catalogue-weighting\.js[^"\n]*"></script>\s*','',s)
+          s=s.replace('</body>','<script src="catalogue-weighting.js?v=20261012-28"></script>\n</body>')
+          p.write_text(s)
+          PY
+          node --check catalogue-weighting.js
+          node --check photo-hints.js
+          node --check tracklist-upgrade.js
+          node --check recognition-tools.js
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html photo-hints.js tracklist-upgrade.js recognition-tools.js
+          if ! git diff --cached --quiet; then git commit -m "Integrate stronger catalogue-label evidence in candidate ranking"; git push; fi
