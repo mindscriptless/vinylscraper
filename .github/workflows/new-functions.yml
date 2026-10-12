@@ -1,0 +1,42 @@
+name: Integrate new functions
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/new-functions.yml', 'new-functions.js']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate functions and history layout
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('menu-tools.js')
+          s=p.read_text()
+          old="row.append(helpButton('About history'"
+          new="label.style.display='inline-flex';label.style.alignItems='center';label.style.gap='4px';label.append(helpButton('About history'"
+          if old in s:
+              assert s.count(old)==1
+              s=s.replace(old,new,1)
+          else:
+              assert new in s
+          p.write_text(s)
+          p=Path('index.html')
+          s=p.read_text()
+          assert 'recognition-tools.js' in s and 'menu-tools.js' in s
+          s=re.sub(r'menu-tools\.js(?:\?[^"\n]*)?', 'menu-tools.js?v=20261012-11', s)
+          s=re.sub(r'<script src="(?:search-interface|new-functions)\.js[^"\n]*"></script>\s*','',s)
+          s=s.replace('</body>','<script src="new-functions.js?v=20261012-11"></script>\n</body>')
+          p.write_text(s)
+          PY
+          node --check menu-tools.js
+          node --check new-functions.js
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add menu-tools.js index.html
+          if ! git diff --cached --quiet; then git commit -m "Integrate new recognition and interface functions"; git push; fi
