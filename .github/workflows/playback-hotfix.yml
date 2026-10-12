@@ -1,0 +1,39 @@
+name: Apply Spotify playback hotfix
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/playback-hotfix.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  hotfix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove blocking start check
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('history-tools.js')
+          s=p.read_text()
+          marker='/* Revalidate device on start. Bounded retries only for stale/missing devices. */'
+          if marker in s:
+              before, after=s.split(marker,1)
+              assert after.lstrip().startswith('const api=sp;let checkedRun=-1;')
+              assert after.rstrip().endswith('})();')
+              p.write_text(before+'/* Playback uses the original Spotify API; status polling cannot abort cues. */\n})();\n')
+          else:
+              assert 'const api=sp;let checkedRun=-1;' not in s
+          p=Path('index.html')
+          s=p.read_text()
+          assert 'history-tools.js' in s
+          s=re.sub(r'history-tools\.js(?:\?[^"\n]*)?', 'history-tools.js?v=20261012-6', s)
+          p.write_text(s)
+          PY
+          node --check history-tools.js
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add history-tools.js index.html
+          if ! git diff --cached --quiet; then git commit -m "Restore non-blocking Spotify playback"; git push; fi
