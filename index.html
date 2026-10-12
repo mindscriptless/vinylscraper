@@ -108,7 +108,7 @@ const saveUI=()=>localStorage.setItem('lpui',JSON.stringify(ui));
 const saveCfg=()=>localStorage.setItem('lp',JSON.stringify(cfg));
 const CURS=['EUR','USD','GBP','CHF','CAD','AUD','JPY','SEK','NZD','MXN','BRL','ZAR'];
 const REDIR=location.origin+location.pathname;
-const ov=(m,e)=>{const o=$('#ov');o.textContent=m;o.className=e?'err':''};
+let ov=(m,e)=>{const o=$('#ov');o.textContent=m;o.className=e?'err':''};
 const connected=()=>!!localStorage.getItem('lpt');
 function fill(){for(const k of ['cid','dis'])$('#'+k).value=cfg[k];for(const k of ['s0','t1','jump','len'])$('#'+k).value=cfg[k];
  $('#skip').checked=!!cfg.skip;$('#redir').textContent=REDIR;
