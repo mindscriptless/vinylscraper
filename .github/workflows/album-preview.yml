@@ -1,0 +1,55 @@
+name: Integrate album preview fixes
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/album-preview.yml', 'album-preview.js']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate album mapping and layout
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('patch-batch.js')
+          s=p.read_text()
+          old='const t=tracks[i];if(ui.free)'
+          new='const t=tracks[i];if(!t.uri)continue;if(ui.free)'
+          if old in s:
+              assert s.count(old)==1
+              s=s.replace(old,new,1)
+          else:
+              assert new in s
+          old='play(tracks.map(t=>t.uri),0,i,id)'
+          new='play(tracks.filter(t=>t.uri).map(t=>t.uri),0,tracks.slice(0,i).filter(t=>t.uri).length,id)'
+          if old in s:
+              assert s.count(old)==1
+              s=s.replace(old,new,1)
+          else:
+              assert new in s
+          p.write_text(s)
+          p=Path('new-functions.js')
+          s=p.read_text().replace('youtube.hidden=!ui.yt','youtube.hidden=true')
+          assert s.count('youtube.hidden=true')==2
+          p.write_text(s)
+          p=Path('index.html')
+          s=p.read_text()
+          assert 'new-functions.js' in s
+          for name in ['patch-batch','new-functions']:
+              s=re.sub(name+r'\.js(?:\?[^"\n]*)?',name+'.js?v=20261012-13',s)
+          s=re.sub(r'<script src="album-preview\.js[^"\n]*"></script>\s*','',s)
+          s=s.replace('</body>','<script src="album-preview.js?v=20261012-13"></script>\n</body>')
+          p.write_text(s)
+          PY
+          node --check patch-batch.js
+          node --check new-functions.js
+          node --check album-preview.js
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add patch-batch.js new-functions.js index.html
+          if ! git diff --cached --quiet; then git commit -m "Integrate complete album preview and desktop history layout"; git push; fi
